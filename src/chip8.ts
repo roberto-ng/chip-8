@@ -12,6 +12,7 @@ export default class Chip8 {
     private _memoria: Uint8Array = new Uint8Array(0x1000);
     private _stack: Uint16Array = new Uint16Array(0xF);
     private _v: Uint8Array = new Uint8Array(0xF);
+    private _teclado: Uint8Array = new Uint8Array(0xF);
 
     public static readonly MEMORIA_TAMANHO: number = 0x1000;
 
@@ -45,6 +46,10 @@ export default class Chip8 {
         for (let i = 0; i < 0xF; ++i) {
             this._v[i] = 0;
         }
+
+        for (let i = 0; i < 0xF; ++i) {
+            this._teclado[i] = 0;
+        }
     }
 
     /** Reseta o emulador ao seu estado inicial */
@@ -75,6 +80,10 @@ export default class Chip8 {
 
         for (let i = 0; i < 0xF; ++i) {
             this._v[i] = 0;
+        }
+
+        for (let i = 0; i < 0xF; ++i) {
+            this._teclado[i] = 0;
         }
     }
 
@@ -355,6 +364,151 @@ export default class Chip8 {
     private op_cxkk_rnd(): void {
         const byte_aleatorio = Math.floor(Math.random() * 0xFF) & (this._opcode & 0xFF);
         this._v[this.x] = byte_aleatorio & this.kk;
+    }
+
+    private setPixel(pos_x: number, pos_y: number, fim_sprite: number): number {
+        let colisao = 0;
+        const sprite = this._memoria.slice(this._i, fim_sprite);
+
+        for (let i = 0; i < sprite.length; ++i) {
+            for (let j = 0; j < 8; ++j) {
+                const x = (pos_x + j) % 64;
+                const y = (pos_y + i) % 32;
+
+                if ((sprite[i] & (0x80 >> j)) !== 0) {
+                    if (this._tela[y][x] === 1) {
+                        colisao = 1;
+                    }
+
+                    this._tela[y][x] ^= 1;
+                }
+            }
+        }
+
+        this._desenharFlag = true;
+        return colisao;
+    }
+
+    /**
+     * Desenha um sprite na coordenada (Vx, Vy), com 8 pixels de largura e N de altura
+     */
+    private op_dxyn_draw(): void {
+        let n = this._opcode * 0x000F;
+        let fim_sprite = this._i + n;
+        this._v[0xF] = this.setPixel(this.x, this.y, fim_sprite);
+        this._pc += 2;
+    }
+
+    /**
+     * SKP Vx
+     * pula a próxima instrução se a tecla com o valor de Vx estiver sendo pressionada
+     */
+    private op_ex9e_skp(): void {
+        const tecla = this._v[this.x];
+        if (this._teclado[tecla] !== 0) {
+            this._pc += 4;
+        }
+        else {
+            this._pc += 2;
+        }
+    }
+
+    /**
+     * SKNP Vx
+     * pula a próxima instrução se a tecla com o valor de Vx não estiver sendo pressionada
+     */
+    private op_exa1_sknp(): void {
+        const tecla = this._v[this.x];
+        if (this._teclado[tecla] === 0) {
+            this._pc += 4;
+        }
+        else {
+            this._pc += 2;
+        }
+    }
+
+    /**
+     * LD Vx, DELAY_TIMER
+     * Atribui o valor do temporizador de delay ao Vx
+     */
+    private op_fx07_ld(): void {
+        this._v[this.x] = this._delayTempo;
+        this._pc += 2;
+    }
+
+    /**
+     * LD DELAY_TIMER, Vx
+     * Atribui o valor de Vx ao temporizador de delay
+     */
+    private op_fx15_ld(): void {
+        this._delayTempo = this._v[this.x];
+        this._pc += 2;
+    }
+
+    /**
+     * LD SOUND_TIMER, Vx
+     * Atribui o valor de Vx ao temporizador de som
+     */
+    private op_fx18_ld(): void {
+        this._somTempo = this._v[this.x];
+        this._pc += 2;
+    }
+
+    /**
+     * ADD I, Vx
+     * I = I + Vx
+     */
+    private op_fx1e_add(): void {
+        this._i = this._v[this.x];
+        this._pc += 2;
+    }
+
+    /**
+     * LD F, Vx
+     * Atribui ao I o endereço do sprite correspondente à Vx
+     */
+    private op_fx29_ld(): void {
+        this._i = this.x * 5;
+        this._pc += 2;
+    }
+
+    /**
+     * LD B, Vx
+     * opcode Fx33: Guarda a representação em codificação binária decimal (BCD) 
+     * do valor do registrador Vx. O digito na casa das centenas será salvo no 
+     * endereço "i" (o registrador de index), a casa das dezenas será salva no 
+     * endereço "i + 1", e o digito da casa das unidades erá salvo em "i + 2"
+     */
+    private op_fx33_ld(): void {
+        const valor = this._v[this.x];
+        this._memoria[this._i] = valor / 100;
+        this._memoria[this._i+1] = (valor / 10) % 10;
+        this._memoria[this._i+2] = (valor % 100) % 10;
+        this._pc += 2;
+    }
+
+    /**
+     * LD [I], Vx
+     * Guarda os valores de V0 à Vx na memória a partir do endereço I
+     */
+    private op_fx55_ld(): void {
+        for (let i = 0; i <= this.x; i++) {
+            this._v[i] = this._memoria[i + this._i];
+        }
+
+        this._pc += 2;
+    }
+
+    /**
+     * LD Vx, [I]
+     * Preenche os registradores de V0 à Vx com valores na memória a partir do endereço I
+     */
+    private op_fx65_ld(): void {
+        for (let i = 0; i <= this.x; i++) {
+            this._v[i] = this._memoria[i + this._i];
+        }
+        
+        this._pc += 2;
     }
 
     public get opcode(): number {
