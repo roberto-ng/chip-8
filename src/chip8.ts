@@ -173,27 +173,211 @@ export default class Chip8 {
         }
     }
 
-    public get opcode(): number {
+    /**
+     * Opcode 5xy0: pula a proxima instrução se Vx for igual a Vy
+     */
+    private op_5xy0_se(): void {
+        if (this._v[this.x] == this._v[this.y]) {
+            this._pc += 4;
+        }
+        else {
+            this._pc += 2;
+        }
+    }
+
+    /**
+     * LD Vx, byte
+     * Opcode 6xkk: guarda o valor kk em Vx
+     */
+    private op_6xkk_ld(): void {
+        this._v[this.x] = this.kk;
+        this._pc += 2;
+    }
+
+    /**
+     * ADD Vx, byte
+     * Opcode 7xkk: adiciona o valor kk ao registrador Vx
+     */
+    private op_7xkk_add(): void {
+        this._v[this.x] += this.kk;
+        this._pc += 2;
+    }
+    
+    /**
+     * LD Vx, Vy
+     * opcode 8xy0: salva o valor de Vy no registrador Vx
+     */
+    private op_8xy0_ld(): void {
+        this._v[this.x] = this._v[this.y];
+        this._pc += 2;
+    }
+
+    /** 
+     * OR Vx, Vy
+     * opcode 8xy1: performa uma uma operação bitwise OR 
+     * nos valores de Vx e Vy, e salva o resultado no 
+     * registrador Vx
+     */
+    private op_8xy1_or(): void {
+        this._v[this.x] = this._v[this.x] | this._v[this.y];
+        this._pc += 2;
+    }
+
+    /**
+     * AND Vx, Vy
+     * opcode 8xy2: performa uma uma operação bitwise AND 
+     * nos valores de Vx e Vy, e salva o resultado no 
+     * registrador Vx
+     */
+    private op_8xy2_and(): void {
+        this._v[this.x] = this._v[this.x] & this._v[this.y];
+        this._pc += 2;
+    }
+
+    /**
+    * XOR Vx, Vy
+    * opcode 8xy3: performa uma uma operação bitwise XOR (OR exclusivo)
+    * nos valores de Vx e Vy, e salva o resultado no 
+    * registrador Vx 
+    */
+   private op_8xy3_xor(): void {
+        this._v[this.x] = this._v[this.x] ^ this._v[this.y];
+        this._pc += 2;
+    }
+
+    /**
+     * ADD Vx, Vy
+     * opcode 8xy4: adiciona o valor de Vy a Vx e ativa a carry flag 
+     * do registrador VF caso o resultado seja maior do que 255
+     */
+    private op_8xy4_add(): void {
+        this._v[this.x] += this._v[this.y];
+        this._v[0xF] = +(this._v[this.x] > 255);
+
+        /*
+        if (this._v[this.x] > 255) {
+            this._v[this.x] -= 256;
+        }
+        */
+
+        this._pc += 2;
+    }
+
+    /**
+     * SUB Vx, Vy
+     * opcode 8xy5: subtrai Vx por Vy e guarda o resultado em Vx.
+     * Caso Vx seja maior que Vy, VF é igual a 1, e caso o contrario 
+     * é igual a 0
+     */
+    private op_8xy5_sub(): void {
+        this._v[0xF] = +(this._v[this.x] > this._v[this.y]);
+        this._v[this.x] -= this._v[this.y];
+
+        /*
+        if (this._v[this.x] < 0) {
+            this._v[this.x] += 256;
+        }
+        */
+
+        this._pc += 2;
+    }
+
+    /**
+     * SHR Vx
+     * opcode 8x06: desloca o número uma casa (em binário) para a direita (right shift). 
+     * O bit menos significativo do valor original de Vx é salvo no 
+     * registrador VF
+     */
+    private op_8x06_shr(): void {
+        this._v[0xF] = this._v[this.x] & 0x1;
+        this._v[this.x] >>= 1;
+        this._pc += 2;
+    }
+
+    /**
+     * SUBN Vx, Vy
+     * opcode 8xy7: subtrai Vy por Vx e guarda o resultado em Vx.
+     * Caso Vx seja maior que Vy, VF é igual a 1, e caso o contrario 
+     * é igual a 0
+     */
+    private op_8xy7_subn(): void {
+        this._v[0xF] = +(this._v[this.y] > this._v[this.x]);
+        this._v[this.x] = this._v[this.y] - this._v[this.x];
+        this._pc += 2;
+    }
+
+    /**
+     * SHL Vx
+     * opcode 8x0E: desloca o número uma casa (em binário) para a esquerda (left shift). 
+     * O bit mais significativo do valor original de Vx é salvo no 
+     * registrador VF
+     */
+    private op_8x0e_shl(): void {
+        this._v[0xF] = +(this._v[this.x] & 0x80);
+        this._v[this.x] <<= 1;
+        this._pc += 2;
+    }
+
+    /**
+     * SNE Vx, Vy
+     * Pula a proxima instrução se Vx for diferente de Vy
+     */
+    private op_9xy0_sne(): void {
+        if (this._v[this.x] !== this._v[this.y]) {
+            this._pc += 4;
+        }
+        else {
+            this._pc += 2;
+        }
+    }
+
+    /**
+     * JMP V0, endereco
+     * Pula para o endereço nnn + V0
+     */
+    private op_annn_ld(): void {
+        this._i = this.nnn;
+        this._pc += 2;
+    }
+
+    /**
+     * JMP V0, endereco
+     * Pula para o endereço nnn + V0
+     */
+    private op_bnnn_jmp(): void {
+        this._pc = this.nnn;
+    }
+
+    /**
+     * RND Vx, byte
+     * Vx = byte aleatório & kk
+     */
+    private op_cxkk_rnd(): void {
+        const byte_aleatorio = Math.floor(Math.random() * 0xFF) & (this._opcode & 0xFF);
+        this._v[this.x] = byte_aleatorio & this.kk;
+    }
+
+    private get opcode(): number {
         return this._opcode;
     }
 
     /** As 3 últimas casas (em hexadecimal) do opcode */
-    public get nnn(): number {
+    private get nnn(): number {
         return this._opcode & 0x0FFF;
     }
 
     /** As 2 últimas casas (em hexadecimal) do opcode */
-    public get kk(): number {
+    private get kk(): number {
         return this._opcode & 0x00FF;
     }
 
     /** O número na segunda casa (da esquerda pra direita em hexadecimal) do opcode */
-    public get x(): number {
+    private get x(): number {
         return (this._opcode & 0x0F00) >> 8;
     }
 
     /** O número na terceira casa (da esquerda pra direita em hexadecimal) do opcode */
-    public get y(): number {
+    private get y(): number {
         return (this._opcode & 0x00F0) >> 4;
     }
 }
