@@ -357,27 +357,27 @@ export default class Chip8 {
         this._v[this.x] = byte_aleatorio & this.kk;
     }
 
-    private get opcode(): number {
+    public get opcode(): number {
         return this._opcode;
     }
 
     /** As 3 últimas casas (em hexadecimal) do opcode */
-    private get nnn(): number {
+    public get nnn(): number {
         return this._opcode & 0x0FFF;
     }
 
     /** As 2 últimas casas (em hexadecimal) do opcode */
-    private get kk(): number {
+    public get kk(): number {
         return this._opcode & 0x00FF;
     }
 
     /** O número na segunda casa (da esquerda pra direita em hexadecimal) do opcode */
-    private get x(): number {
+    public get x(): number {
         return (this._opcode & 0x0F00) >> 8;
     }
 
     /** O número na terceira casa (da esquerda pra direita em hexadecimal) do opcode */
-    private get y(): number {
+    public get y(): number {
         return (this._opcode & 0x00F0) >> 4;
     }
 }
