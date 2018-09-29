@@ -8,11 +8,11 @@ export default class Chip8 {
     private _esperandoInput: boolean;
     private _esperandoRegistrador: number;
     private _desenharFlag: boolean;
-    private _tela: Array<Array<number>> = new Array(32);
-    private _memoria: Uint8Array = new Uint8Array(0x1000);
-    private _stack: Uint16Array = new Uint16Array(0xF);
-    private _v: Uint8Array = new Uint8Array(0xF);
-    private _teclado: Uint8Array = new Uint8Array(0xF);
+    private _tela: Array<Array<number>>;
+    private _memoria: Uint8Array;;
+    private _stack: Uint16Array;;
+    private _v: Uint8Array;
+    private _teclado: Uint8Array;
 
     public static readonly MEMORIA_TAMANHO: number = 0x1000;
 
@@ -26,6 +26,11 @@ export default class Chip8 {
         this._esperandoInput = false;
         this._esperandoRegistrador = 0;
         this._desenharFlag = false;
+        this._tela = new Array(32);
+        this._memoria = new Uint8Array(0x1000);
+        this._stack = new Uint16Array(0xF);
+        this._v = new Uint8Array(0xF);
+        this._teclado = new Uint8Array(0xF);
 
         for (let i = 0; i < 32; ++i) {
             this._tela[i] = new Array(64);
@@ -114,6 +119,89 @@ export default class Chip8 {
         const primeiro = this._memoria[this._pc];
         const segundo = this._memoria[this._pc+1];
         this._opcode = (primeiro << 8) | segundo;
+    }
+
+    private executarOpcode(): void {
+        switch (this._opcode & 0xF000) {
+            case 0x0000: this.executarOp_0xxx(); break;
+            case 0x1000: this.op_1nnn_jp(); break;
+            case 0x2000: this.op_2nnn_call(); break;
+            case 0x3000: this.op_3xkk_se(); break;
+            case 0x4000: this.op_4xkk_sne(); break;
+            case 0x5000: this.op_5xy0_se(); break;
+            case 0x6000: this.op_6xkk_ld(); break;
+            case 0x7000: this.op_7xkk_add(); break;
+            case 0x8000: this.executarOp_8xxx(); break;
+            case 0x9000: this.op_9xy0_sne(); break;
+            case 0xA000: this.op_annn_ld(); break;
+            case 0xB000: this.op_bnnn_jmp(); break;
+            case 0xC000: this.op_cxkk_rnd(); break;
+            case 0xD000: this.op_dxyn_draw(); break;
+            case 0xE000: this.executarOp_exxx(); break;
+            case 0xF000: this.executarOp_fxxx(); break;
+            default:
+                console.error(`Opcode desconhecido: ${this._opcode}`);
+                this._pc += 2;
+                break;
+        }
+    }
+
+    private executarOp_0xxx(): void {
+        switch (this._opcode & 0x00FF) {
+            case 0x00EE: this.op_00ee_ret(); break;
+            case 0x00E0: this.op_00ee_ret(); break;
+            default:
+                console.error(`Opcode desconhecido: ${this._opcode}`);
+                this._pc += 2;
+                break;
+        }
+    }
+
+    private executarOp_8xxx(): void {
+        switch (this._opcode & 0x000F) {
+            case 0x0000: this.op_8xy0_ld(); break;
+            case 0x0001: this.op_8xy1_or(); break;
+            case 0x0002: this.op_8xy2_and(); break;
+            case 0x0003: this.op_8xy3_xor(); break;
+            case 0x0004: this.op_8xy4_add(); break;
+            case 0x0005: this.op_8xy5_sub(); break;
+            case 0x0006: this.op_8x06_shr(); break;
+            case 0x0007: this.op_8xy7_subn(); break;
+            case 0x000E: this.op_8x0e_shl(); break;
+            default:
+                console.error(`Opcode desconhecido: ${this._opcode}`);
+                this._pc += 2;
+                break;
+        }
+    }
+
+    private executarOp_exxx(): void {
+        switch (this._opcode & 0x000F) {
+            case 0x009E: this.op_ex9e_skp(); break;
+            case 0x00A1: this.op_exa1_sknp(); break;
+            default:
+                console.error(`Opcode desconhecido: ${this._opcode}`);
+                this._pc += 2;
+                break;
+        }
+    }
+
+    private executarOp_fxxx(): void {
+        switch (this._opcode & 0x000F) {
+            case 0x0007: this.op_fx07_ld(); break;
+            case 0x000A: this.op_fx0a_ld(); break;
+            case 0x0015: this.op_fx15_ld(); break;
+            case 0x0018: this.op_fx18_ld(); break;
+            case 0x001E: this.op_fx1e_add(); break;
+            case 0x0029: this.op_fx29_ld(); break;
+            case 0x0033: this.op_fx33_ld(); break;
+            case 0x0055: this.op_fx55_ld(); break;
+            case 0x0065: this.op_fx65_ld(); break;
+            default:
+                console.error(`Opcode desconhecido: ${this._opcode}`);
+                this._pc += 2;
+                break;
+        }
     }
 
     /**
@@ -428,6 +516,16 @@ export default class Chip8 {
     }
 
     /**
+     * LD Vx, K
+     * Espera o usuário pressionar uma tecla, e atribui o valor a Vx
+     */
+    private op_fx0a_ld(): void {
+        this._esperandoRegistrador = this.x;
+        this._esperandoInput = true;
+        this._pc += 2;
+    }
+
+    /**
      * LD Vx, DELAY_TIMER
      * Atribui o valor do temporizador de delay ao Vx
      */
@@ -507,7 +605,7 @@ export default class Chip8 {
         for (let i = 0; i <= this.x; i++) {
             this._v[i] = this._memoria[i + this._i];
         }
-        
+
         this._pc += 2;
     }
 
