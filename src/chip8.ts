@@ -1,3 +1,5 @@
+import IRenderizador from './renderizador';
+
 export default class Chip8 {
     private _opcode: number;
     private _i: number;
@@ -13,14 +15,15 @@ export default class Chip8 {
     private _stack: Uint16Array;;
     private _v: Uint8Array;
     private _teclado: Uint8Array;
+    private _renderizador: IRenderizador;
 
     public static readonly MEMORIA_TAMANHO: number = 0x1000;
 
-    public constructor() {
+    public constructor(renderizador: IRenderizador) {
         this._opcode = 0;
         this._sp = 0
         this._pc = 0x200;
-        this._i = 0x200;
+        this._i = 0;
         this._delayTempo = 0;
         this._somTempo = 0;
         this._esperandoInput = false;
@@ -28,9 +31,10 @@ export default class Chip8 {
         this._desenharFlag = false;
         this._tela = new Array(32);
         this._memoria = new Uint8Array(0x1000);
-        this._stack = new Uint16Array(0xF);
-        this._v = new Uint8Array(0xF);
-        this._teclado = new Uint8Array(0xF);
+        this._stack = new Uint16Array(16);
+        this._v = new Uint8Array(16);
+        this._teclado = new Uint8Array(16);
+        this._renderizador = renderizador;
 
         for (let i = 0; i < 32; ++i) {
             this._tela[i] = new Array(64);
@@ -44,17 +48,19 @@ export default class Chip8 {
             this._memoria[i] = 0;
         }
 
-        for (let i = 0; i < 0xF; ++i) {
+        for (let i = 0; i < this._stack.length; ++i) {
             this._stack[i] = 0;
         }
 
-        for (let i = 0; i < 0xF; ++i) {
+        for (let i = 0; i < this._v.length; ++i) {
             this._v[i] = 0;
         }
 
-        for (let i = 0; i < 0xF; ++i) {
+        for (let i = 0; i < this._teclado.length; ++i) {
             this._teclado[i] = 0;
         }
+
+        this.carregarFonte();
     }
 
     /** Reseta o emulador ao seu estado inicial */
@@ -62,7 +68,7 @@ export default class Chip8 {
         this._opcode = 0;
         this._sp = 0
         this._pc = 0x200;
-        this._i = 0x200;
+        this._i = 0;
         this._delayTempo = 0;
         this._somTempo = 0;
         this._esperandoInput = false;
@@ -79,17 +85,19 @@ export default class Chip8 {
             this._memoria[i] = 0;
         }
 
-        for (let i = 0; i < 0xF; ++i) {
+        for (let i = 0; i < 16; ++i) {
             this._stack[i] = 0;
         }
 
-        for (let i = 0; i < 0xF; ++i) {
+        for (let i = 0; i < 16; ++i) {
             this._v[i] = 0;
         }
 
-        for (let i = 0; i < 0xF; ++i) {
+        for (let i = 0; i < 16; ++i) {
             this._teclado[i] = 0;
         }
+
+        this.carregarFonte();
     }
 
     /** 
@@ -104,6 +112,69 @@ export default class Chip8 {
                 this._memoria[pos] = byte;
             }
         });
+    }
+
+    /** Emula um ciclo da CPU */
+    public emularCiclo(): void {
+        this.buscarOpcode();
+        this.executarOpcode();
+
+        if (this._delayTempo > 0) {
+            --this._delayTempo;
+        }
+
+        if (this._somTempo > 0) {
+            if (this._somTempo === 1) {
+                console.log("BEEP");
+            }
+
+            --this._somTempo;
+        }
+    }
+
+    public renderizar(): void {
+        if (!this._desenharFlag) { return; }
+
+        this._renderizador.limparTela();
+
+        for (let y = 0; y < 32; ++y) {
+            for (let x = 0; x < 64; ++x) {
+                const pixel = this._tela[y][x];
+
+                if (pixel !== 0) {
+                    this._renderizador.mudarCor('#ff0000');
+                } else {
+                    this._renderizador.mudarCor('#000000');
+                }
+
+                this._renderizador.desenharQuadrado(x * 8, y * 8, 8, 8);
+            }
+        }
+    }
+
+    private carregarFonte(): void {
+        const fonte = [
+            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+            0xF0, 0x80, 0xF0, 0x80, 0x80, // F          
+        ];
+
+        for (let i = 0; i < 80; ++i) {
+            this._memoria[i] = fonte[i];
+        }
     }
 
     /** 
@@ -149,7 +220,7 @@ export default class Chip8 {
     private executarOp_0xxx(): void {
         switch (this._opcode & 0x00FF) {
             case 0x00EE: this.op_00ee_ret(); break;
-            case 0x00E0: this.op_00ee_ret(); break;
+            case 0x00E0: this.op_00e0_clr(); break;
             default:
                 console.error(`Opcode desconhecido: ${this._opcode}`);
                 this._pc += 2;
@@ -176,7 +247,7 @@ export default class Chip8 {
     }
 
     private executarOp_exxx(): void {
-        switch (this._opcode & 0x000F) {
+        switch (this._opcode & 0x00FF) {
             case 0x009E: this.op_ex9e_skp(); break;
             case 0x00A1: this.op_exa1_sknp(); break;
             default:
@@ -187,7 +258,7 @@ export default class Chip8 {
     }
 
     private executarOp_fxxx(): void {
-        switch (this._opcode & 0x000F) {
+        switch (this._opcode & 0x00FF) {
             case 0x0007: this.op_fx07_ld(); break;
             case 0x000A: this.op_fx0a_ld(); break;
             case 0x0015: this.op_fx15_ld(); break;
@@ -208,7 +279,7 @@ export default class Chip8 {
      * CLR
      * Limpa a tela
      */
-    private op00e0_clr(): void {
+    private op_00e0_clr(): void {
         for (let i = 0; i < 32; ++i) {
             for (let j = 0; j < 64; ++j) {
                 this._tela[i][j] = 0;
@@ -250,7 +321,7 @@ export default class Chip8 {
      * Opcode 3xkk: pula a proxima instrução se kk for igual a Vx
      */
     private op_3xkk_se(): void {
-        if (this._v[this.x] == this.kk) {
+        if (this._v[this.x] === this.kk) {
             this._pc += 4;
         }
         else {
@@ -262,7 +333,7 @@ export default class Chip8 {
      * Opcode 4xkk: pula a proxima instrução se kk for diferente de Vx
      */
     private op_4xkk_sne(): void {
-        if (this._v[this.x] != this.kk) {
+        if (this._v[this.x] !== this.kk) {
             this._pc += 4;
         }
         else {
@@ -274,7 +345,7 @@ export default class Chip8 {
      * Opcode 5xy0: pula a proxima instrução se Vx for igual a Vy
      */
     private op_5xy0_se(): void {
-        if (this._v[this.x] == this._v[this.y]) {
+        if (this._v[this.x] === this._v[this.y]) {
             this._pc += 4;
         }
         else {
@@ -316,7 +387,7 @@ export default class Chip8 {
      * registrador Vx
      */
     private op_8xy1_or(): void {
-        this._v[this.x] = this._v[this.x] | this._v[this.y];
+        this._v[this.x] |= this._v[this.y];
         this._pc += 2;
     }
 
@@ -327,7 +398,7 @@ export default class Chip8 {
      * registrador Vx
      */
     private op_8xy2_and(): void {
-        this._v[this.x] = this._v[this.x] & this._v[this.y];
+        this._v[this.x] &= this._v[this.y];
         this._pc += 2;
     }
 
@@ -338,7 +409,7 @@ export default class Chip8 {
     * registrador Vx 
     */
    private op_8xy3_xor(): void {
-        this._v[this.x] = this._v[this.x] ^ this._v[this.y];
+        this._v[this.x] ^= this._v[this.y];
         this._pc += 2;
     }
 
@@ -386,8 +457,9 @@ export default class Chip8 {
      * registrador VF
      */
     private op_8x06_shr(): void {
-        this._v[0xF] = this._v[this.x] & 0x1;
-        this._v[this.x] >>= 1;
+        let vx = this._v[this.x];
+        this._v[0xF] = 0x1 & vx;
+        this._v[this.x] = vx >> 1;
         this._pc += 2;
     }
 
@@ -398,8 +470,12 @@ export default class Chip8 {
      * é igual a 0
      */
     private op_8xy7_subn(): void {
-        this._v[0xF] = +(this._v[this.y] > this._v[this.x]);
-        this._v[this.x] = this._v[this.y] - this._v[this.x];
+        let vx = this._v[this.x];
+        let vy = this._v[this.y];
+
+        this._v[0xF] = vy > vx ? 1 : 0;
+        this._v[this.x] = vy - vx;
+
         this._pc += 2;
     }
 
@@ -410,8 +486,16 @@ export default class Chip8 {
      * registrador VF
      */
     private op_8x0e_shl(): void {
+        let vx = this._v[this.x];
+
+        /*
         this._v[0xF] = +(this._v[this.x] & 0x80);
         this._v[this.x] <<= 1;
+        */
+
+        this._v[0xF] = vx >> 7;
+        this._v[this.x] = vx << 1;
+
         this._pc += 2;
     }
 
@@ -442,7 +526,7 @@ export default class Chip8 {
      * Pula para o endereço nnn + V0
      */
     private op_bnnn_jmp(): void {
-        this._pc = this.nnn;
+        this._pc = this._v[this.x] + this.nnn;
     }
 
     /**
@@ -452,13 +536,14 @@ export default class Chip8 {
     private op_cxkk_rnd(): void {
         const byte_aleatorio = Math.floor(Math.random() * 0xFF) & (this._opcode & 0xFF);
         this._v[this.x] = byte_aleatorio & this.kk;
+        this._pc += 2;
     }
 
     private setPixel(pos_x: number, pos_y: number, fim_sprite: number): number {
         let colisao = 0;
-        const sprite = this._memoria.slice(this._i, fim_sprite);
+        const sprite = this._memoria.slice(this._i, fim_sprite+1);
 
-        for (let i = 0; i < sprite.length; ++i) {
+        for (let i = 0; i < sprite.length-1; ++i) {
             for (let j = 0; j < 8; ++j) {
                 const x = (pos_x + j) % 64;
                 const y = (pos_y + i) % 32;
@@ -481,9 +566,10 @@ export default class Chip8 {
      * Desenha um sprite na coordenada (Vx, Vy), com 8 pixels de largura e N de altura
      */
     private op_dxyn_draw(): void {
-        let n = this._opcode * 0x000F;
+        let n = this._opcode & 0x000F;
         let fim_sprite = this._i + n;
-        this._v[0xF] = this.setPixel(this.x, this.y, fim_sprite);
+        this._v[0xF] = this.setPixel(this._v[this.x], this._v[this.y], fim_sprite);
+
         this._pc += 2;
     }
 
@@ -557,7 +643,7 @@ export default class Chip8 {
      * I = I + Vx
      */
     private op_fx1e_add(): void {
-        this._i = this._v[this.x];
+        this._i += this._v[this.x];
         this._pc += 2;
     }
 
@@ -591,7 +677,7 @@ export default class Chip8 {
      */
     private op_fx55_ld(): void {
         for (let i = 0; i <= this.x; i++) {
-            this._v[i] = this._memoria[i + this._i];
+            this._memoria[i + this._i] = this._v[i];
         }
 
         this._pc += 2;
@@ -607,6 +693,10 @@ export default class Chip8 {
         }
 
         this._pc += 2;
+    }
+
+    public get v(): Uint8Array {
+        return this._v;
     }
 
     public get opcode(): number {
