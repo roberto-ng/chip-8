@@ -1,4 +1,9 @@
-import RenderizadorCanvas from './renderizadorCanvas';
+/**
+ * @fileoverview Esta thread cuida de processar as instruções 
+ * da máquina virtual, enquanto a thread principal renderiza 
+ * a tela e recebe input
+ * @author Roberto Nazareth Guedes
+ */
 import Chip8 from './chip8';
 
 interface MensagemCarregar {
@@ -7,25 +12,8 @@ interface MensagemCarregar {
 };
 
 const ctx: Worker = self as any;
-//const render = new RenderizadorCanvas();
 const chip8 = new Chip8();
 let jogoCarregado = false;
-
-const atualizarFrame = () => {
-    if (jogoCarregado) {
-        chip8.emularCiclo();
-
-        if (chip8.desenharFlag) {
-            ctx.postMessage({
-                mensagem: 'renderizar',
-                tela: chip8.tela,
-            });
-        }
-    }
-
-    requestAnimationFrame(atualizarFrame);
-};
-requestAnimationFrame(atualizarFrame);
 
 ctx.onmessage = evento => {
     const dados: MensagemCarregar = evento.data;
@@ -44,3 +32,16 @@ ctx.onmessage = evento => {
         jogoCarregado = true;
     }
 }
+
+setInterval(() => {
+    if (jogoCarregado) {
+        chip8.emularCiclo();
+
+        if (chip8.desenharFlag) {
+            ctx.postMessage({
+                mensagem: 'renderizar',
+                tela: chip8.tela,
+            });
+        }
+    }
+}, 1);

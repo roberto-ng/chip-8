@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Define uma implementação da interface 
+ * IRenderizador, que renderiza em um HTMLCanvasElement
+ * @author Roberto Nazareth Guedes
+ */
+
 import IRenderizador from './renderizador';
 
 export default class RenderizadorCanvas implements IRenderizador {

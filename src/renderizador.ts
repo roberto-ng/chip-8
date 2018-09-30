@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Define uma interface para o renderizador, e também 
+ * uma função para renderizar os dados da tela da máquina virtual
+ * @author Roberto Nazareth Guedes
+ */
+
 export default interface IRenderizador {
     mudarCor(cor: string): void;
     desenharQuadrado(x: number, y: number, l: number, a: number): void;

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Máquina vírtual do CHIP-8
+ * @author Roberto Nazareth Guedes
+ */
+
 export default class Chip8 {
     private _opcode: number;
     private _i: number;

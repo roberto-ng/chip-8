@@ -1,3 +1,7 @@
+/**
+ * @author Roberto Nazareth Guedes
+ */
+
 import Worker from 'worker-loader!./worker';
 import { renderizar } from './renderizador';
 import RenderizadorCanvas from './renderizadorCanvas';
