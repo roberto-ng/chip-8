@@ -678,6 +678,16 @@ export default class Chip8 {
         this._pc += 2;
     }
 
+    /** Registra que uma tecla foi apertada */
+    public teclaBaixo(tecla: number): void {
+        this._teclado[tecla] = 1;
+    }
+
+    /** Registra que uma tecla foi solta */
+    public teclaCima(tecla: number): void {
+        this._teclado[tecla] = 0;
+    }
+
     public get v(): Uint8Array {
         return this._v;
     }
@@ -712,5 +722,9 @@ export default class Chip8 {
 
     public get tela(): number[][] {
         return this._tela;
+    }
+
+    public get teclado(): Uint8Array {
+        return this._teclado;
     }
 }

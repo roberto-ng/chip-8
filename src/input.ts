@@ -23,7 +23,7 @@ const teclas: {[key: number]: number|undefined} = {
  * @param tecla_pc O valor da tecla do PC
  * @returns O valor convertido
  */
-export default function traduzirInput(tecla_pc: number): number {
+export function traduzirInput(tecla_pc: number): number {
     const tecla_chip8 = teclas[tecla_pc];
 
     // se o valor não estiver no hashmap

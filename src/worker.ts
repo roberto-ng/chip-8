@@ -9,6 +9,7 @@ import Chip8 from './chip8';
 interface MensagemCarregar {
     mensagem: string;
     rom: Uint8Array;
+    tecla: number;
 };
 
 const ctx: Worker = self as any;
@@ -19,6 +20,8 @@ ctx.onmessage = evento => {
     const dados: MensagemCarregar = evento.data;
 
     if (dados.mensagem === 'carregar') {
+        //carregar o programa na memória do CHIP-8
+
         if (!(dados.rom instanceof Uint8Array)) {
             window.alert('Erro ao ler arquivo');
             return;
@@ -30,6 +33,13 @@ ctx.onmessage = evento => {
 
         chip8.carregarPrograma(dados.rom);
         jogoCarregado = true;
+    } else if (dados.mensagem === 'teclaBaixo') {
+        // uma tecla foi apertada, registrar input
+        console.log(dados.tecla);
+        chip8.teclaBaixo(dados.tecla);
+    } else if (dados.mensagem === 'teclaCima') {
+        // uma tecla foi solta, registrar input
+        chip8.teclaCima(dados.tecla);
     }
 }
 
@@ -44,4 +54,4 @@ setInterval(() => {
             });
         }
     }
-}, 1);
+}, 0.4);

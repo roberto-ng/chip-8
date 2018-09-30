@@ -2,22 +2,32 @@
  * @author Roberto Nazareth Guedes
  */
 
-import Worker from 'worker-loader!./worker';
-import { renderizar } from './renderizador';
+import Chip8 from './chip8';
 import RenderizadorCanvas from './renderizadorCanvas';
+import { renderizar } from './renderizador';
+import { traduzirInput } from './input';
 
-function enviarPrograma(worker: Worker, arquivo: Blob): void {
+let jogoCarregado = false;
+
+function enviarPrograma(chip8: Chip8, arquivo: Blob): void {
     let leitor = new FileReader();
     leitor.onload = function() {
         if (this.result === null || typeof this.result === 'string') {
             throw new Error('Erro ao ler arquivo');
         }
 
-        //chip8.carregarPrograma(new Uint8Array(this.result));
+        if (jogoCarregado) {
+            chip8.resetar();
+        }
+
+        chip8.carregarPrograma(new Uint8Array(this.result));
+        jogoCarregado = true;
+        /*
         worker.postMessage({
             mensagem: 'carregar',
             rom: new Uint8Array(this.result),
         });
+        */
     };
 
     if (arquivo instanceof Blob)
@@ -25,7 +35,9 @@ function enviarPrograma(worker: Worker, arquivo: Blob): void {
 }
 
 function main(): void {
-    const worker = new Worker();
+    const chip8 = new Chip8();
+
+    //const worker = new Worker();
     //worker.postMessage({a: 1});
     const canvas: HTMLCanvasElement|null = document.querySelector('canvas#chip-8');
     if (canvas === null) {
@@ -39,6 +51,8 @@ function main(): void {
 
     const renderizador = new RenderizadorCanvas(ctx);
 
+    /*
+    // mensagens da outra thread
     worker.addEventListener("message", (evento: MessageEvent) => {
         if (typeof evento.data.mensagem !== 'string') {
             return;
@@ -50,12 +64,42 @@ function main(): void {
                 break;
         }
     });
+    */
 
     const input: HTMLInputElement|null = document.querySelector('input#rom-arquivo');
     if (input === null) {
         console.error('Erro: elemento input não encontrado');
         return;
     }
+
+    document.addEventListener("keydown", e => {
+        try {
+            const tecla = traduzirInput(e.keyCode);
+            /*
+            worker.postMessage({
+                mensagem: 'teclaBaixo',
+                tecla: tecla,
+            });
+            */
+            chip8.teclaBaixo(tecla);
+        }
+        catch(e) {
+        }
+    });
+
+    document.addEventListener("keyup", e => {
+        try {
+            const tecla = traduzirInput(e.keyCode);
+            /*worker.postMessage({
+                mensagem: 'teclaCima',
+                tecla: tecla,
+            });
+            */
+           chip8.teclaCima(tecla);
+        }
+        catch(e) {
+        }
+    });
 
     try {
         input.addEventListener('change', function() {
@@ -64,13 +108,23 @@ function main(): void {
                 return;
             }
 
-            enviarPrograma(worker, this.files[0]);
+            enviarPrograma(chip8, this.files[0]);
         });
     }
     catch (e) {
         window.alert(e);
         console.error(e);
     }
+
+    setInterval(() => {
+        if (jogoCarregado) {
+            chip8.emularCiclo();
+
+            if (chip8.desenharFlag) {
+                renderizar(renderizador, chip8.tela);
+            }
+        }
+    }, 0.01);
 }
 
 try {
