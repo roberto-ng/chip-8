@@ -51,8 +51,6 @@ function main(): void {
         }
     });
 
-
-
     const input: HTMLInputElement|null = document.querySelector('input#rom-arquivo');
     if (input === null) {
         console.error('Erro: elemento input não encontrado');
