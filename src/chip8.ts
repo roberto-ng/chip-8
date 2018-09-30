@@ -5,18 +5,26 @@
 
 export default class Chip8 {
     private _opcode: number;
+    /** Registrador de endereço da memória */
     private _i: number;
+    /** Ponteiro da stack */
     private _sp: number;
+    /** Contador de programa */
     private _pc: number;
     private _delayTempo: number;
     private _somTempo: number;
     private _esperandoInput: boolean;
     private _esperandoRegistrador: number;
     private _desenharFlag: boolean;
+    /** Array 2D representando a tela do CHIP-8 */
     private _tela: Array<Array<number>>;
-    private _memoria: Uint8Array;;
-    private _stack: Uint16Array;;
+    /** Buffer representando a memória do CHIP-8 */
+    private _memoria: Uint8Array;
+    /** Buffer representando a stack do CHIP-8 */
+    private _stack: Uint16Array;
+    /** Buffer representando os registradores do CHIP-8 */
     private _v: Uint8Array;
+    /** Buffer representando o teclado do CHIP-8 */
     private _teclado: Uint8Array;
 
     public static readonly MEMORIA_TAMANHO: number = 0x1000;
@@ -133,6 +141,7 @@ export default class Chip8 {
         }
     }
 
+    /** Carrega a fonte na memória */
     private carregarFonte(): void {
         const fonte = [
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -402,13 +411,6 @@ export default class Chip8 {
     private op_8xy4_add(): void {
         this._v[this.x] += this._v[this.y];
         this._v[0xF] = +(this._v[this.x] > 255);
-
-        /*
-        if (this._v[this.x] > 255) {
-            this._v[this.x] -= 256;
-        }
-        */
-
         this._pc += 2;
     }
 
