@@ -6,17 +6,7 @@ export default class RenderizadorCanvas implements IRenderizador {
     private _altura: number;
     public readonly PIXEL_TAMANHO: number = 8;
     
-    public constructor(query: string) {
-        const canvas: HTMLCanvasElement|null = document.querySelector(query);
-        if (canvas === null) {
-            throw new Error('Erro ao buscar canvas');
-        }
-
-        const ctx = canvas.getContext('2d');
-        if (ctx === null) {
-            throw new Error('Erro ao buscar contexto do canvas');
-        }
-
+    public constructor(ctx: CanvasRenderingContext2D) {
         this._ctx = ctx;
         this._largura = this.PIXEL_TAMANHO * 64;
         this._altura = this.PIXEL_TAMANHO * 32;

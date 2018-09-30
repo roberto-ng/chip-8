@@ -1,29 +1,53 @@
+import Worker from 'worker-loader!./worker';
+import { renderizar } from './renderizador';
 import RenderizadorCanvas from './renderizadorCanvas';
-import Chip8 from './chip8';
 
-let jogoCarregado = false;
-
-function enviarPrograma(chip8: Chip8, arquivo: Blob, callback: () => void): void {
+function enviarPrograma(worker: Worker, arquivo: Blob): void {
     let leitor = new FileReader();
     leitor.onload = function() {
         if (this.result === null || typeof this.result === 'string') {
             throw new Error('Erro ao ler arquivo');
         }
 
-        if (jogoCarregado) {
-            chip8.resetar();
-        }
+        //chip8.carregarPrograma(new Uint8Array(this.result));
+        worker.postMessage({
+            mensagem: 'carregar',
+            rom: new Uint8Array(this.result),
+        });
+    };
 
-        chip8.carregarPrograma(new Uint8Array(this.result));
-        callback();
-    }
-
-    leitor.readAsArrayBuffer(arquivo);
+    if (arquivo instanceof Blob)
+        leitor.readAsArrayBuffer(arquivo);
 }
 
 function main(): void {
-    let render = new RenderizadorCanvas('canvas#chip-8');
-    let chip8 = new Chip8(render);
+    const worker = new Worker();
+    //worker.postMessage({a: 1});
+    const canvas: HTMLCanvasElement|null = document.querySelector('canvas#chip-8');
+    if (canvas === null) {
+        throw new Error('Erro ao buscar canvas');
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (ctx === null) {
+        throw new Error('Erro ao buscar contexto do canvas');
+    }
+
+    const renderizador = new RenderizadorCanvas(ctx);
+
+    worker.addEventListener("message", (evento: MessageEvent) => {
+        if (typeof evento.data.mensagem !== 'string') {
+            return;
+        }
+
+        switch (evento.data.mensagem) {
+            case 'renderizar':
+                renderizar(renderizador, evento.data.tela);
+                break;
+        }
+    });
+
+
 
     const input: HTMLInputElement|null = document.querySelector('input#rom-arquivo');
     if (input === null) {
@@ -38,20 +62,8 @@ function main(): void {
                 return;
             }
 
-            enviarPrograma(chip8, this.files[0], () => {
-                jogoCarregado = true;
-            });
+            enviarPrograma(worker, this.files[0]);
         });
-
-        const atualizarFrame = () => {
-            if (jogoCarregado) {
-                chip8.emularCiclo();
-                chip8.renderizar();
-            }
-
-            window.requestAnimationFrame(atualizarFrame);
-        };
-        window.requestAnimationFrame(atualizarFrame);
     }
     catch (e) {
         window.alert(e);
@@ -59,4 +71,9 @@ function main(): void {
     }
 }
 
-main();
+try {
+    main();
+} catch (e) {
+    window.alert(e);
+    console.error(e);
+}

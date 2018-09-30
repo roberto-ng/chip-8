@@ -42,6 +42,10 @@ module.exports = {
         loader: 'ts-loader',
         exclude: /node_modules/,
         options: { appendTsSuffixTo: [/\.vue$/] }
+      },
+      {
+        test: /\.worker\.js$/,
+        use: { loader: 'worker-loader' }
       }
     ]
   },

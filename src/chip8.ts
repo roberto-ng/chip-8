@@ -1,5 +1,3 @@
-import IRenderizador from './renderizador';
-
 export default class Chip8 {
     private _opcode: number;
     private _i: number;
@@ -15,11 +13,10 @@ export default class Chip8 {
     private _stack: Uint16Array;;
     private _v: Uint8Array;
     private _teclado: Uint8Array;
-    private _renderizador: IRenderizador;
 
     public static readonly MEMORIA_TAMANHO: number = 0x1000;
 
-    public constructor(renderizador: IRenderizador) {
+    public constructor() {
         this._opcode = 0;
         this._sp = 0
         this._pc = 0x200;
@@ -34,7 +31,6 @@ export default class Chip8 {
         this._stack = new Uint16Array(16);
         this._v = new Uint8Array(16);
         this._teclado = new Uint8Array(16);
-        this._renderizador = renderizador;
 
         for (let i = 0; i < 32; ++i) {
             this._tela[i] = new Array(64);
@@ -129,26 +125,6 @@ export default class Chip8 {
             }
 
             --this._somTempo;
-        }
-    }
-
-    public renderizar(): void {
-        if (!this._desenharFlag) { return; }
-
-        this._renderizador.limparTela();
-
-        for (let y = 0; y < 32; ++y) {
-            for (let x = 0; x < 64; ++x) {
-                const pixel = this._tela[y][x];
-
-                if (pixel !== 0) {
-                    this._renderizador.mudarCor('#ff0000');
-                } else {
-                    this._renderizador.mudarCor('#000000');
-                }
-
-                this._renderizador.desenharQuadrado(x * 8, y * 8, 8, 8);
-            }
         }
     }
 
@@ -721,5 +697,13 @@ export default class Chip8 {
     /** O número na terceira casa (da esquerda pra direita em hexadecimal) do opcode */
     public get y(): number {
         return (this._opcode & 0x00F0) >> 4;
+    }
+
+    public get desenharFlag(): boolean {
+        return this._desenharFlag;
+    }
+
+    public get tela(): number[][] {
+        return this._tela;
     }
 }
