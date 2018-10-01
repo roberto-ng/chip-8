@@ -22,12 +22,6 @@ function enviarPrograma(chip8: Chip8, arquivo: Blob): void {
 
         chip8.carregarPrograma(new Uint8Array(this.result));
         jogoCarregado = true;
-        /*
-        worker.postMessage({
-            mensagem: 'carregar',
-            rom: new Uint8Array(this.result),
-        });
-        */
     };
 
     if (arquivo instanceof Blob)
@@ -37,8 +31,6 @@ function enviarPrograma(chip8: Chip8, arquivo: Blob): void {
 function main(): void {
     const chip8 = new Chip8();
 
-    //const worker = new Worker();
-    //worker.postMessage({a: 1});
     const canvas: HTMLCanvasElement|null = document.querySelector('canvas#chip-8');
     if (canvas === null) {
         throw new Error('Erro ao buscar canvas');
@@ -51,21 +43,6 @@ function main(): void {
 
     const renderizador = new RenderizadorCanvas(ctx);
 
-    /*
-    // mensagens da outra thread
-    worker.addEventListener("message", (evento: MessageEvent) => {
-        if (typeof evento.data.mensagem !== 'string') {
-            return;
-        }
-
-        switch (evento.data.mensagem) {
-            case 'renderizar':
-                renderizar(renderizador, evento.data.tela);
-                break;
-        }
-    });
-    */
-
     const input: HTMLInputElement|null = document.querySelector('input#rom-arquivo');
     if (input === null) {
         console.error('Erro: elemento input não encontrado');
@@ -74,14 +51,7 @@ function main(): void {
 
     document.addEventListener("keydown", e => {
         try {
-            const tecla = traduzirInput(e.keyCode);
-            /*
-            worker.postMessage({
-                mensagem: 'teclaBaixo',
-                tecla: tecla,
-            });
-            */
-            chip8.teclaBaixo(tecla);
+            chip8.teclaBaixo(traduzirInput(e.keyCode));
         }
         catch(e) {
         }
@@ -89,13 +59,7 @@ function main(): void {
 
     document.addEventListener("keyup", e => {
         try {
-            const tecla = traduzirInput(e.keyCode);
-            /*worker.postMessage({
-                mensagem: 'teclaCima',
-                tecla: tecla,
-            });
-            */
-           chip8.teclaCima(tecla);
+           chip8.teclaCima(traduzirInput(e.keyCode));
         }
         catch(e) {
         }
@@ -115,8 +79,10 @@ function main(): void {
         window.alert(e);
         console.error(e);
     }
+    
+    let milissegundos = 2;
 
-    setInterval(() => {
+    const atualizar = () => {
         if (jogoCarregado) {
             chip8.emularCiclo();
 
@@ -124,7 +90,12 @@ function main(): void {
                 renderizar(renderizador, chip8.tela);
             }
         }
-    }, 0.0001);
+
+        setTimeout(atualizar, milissegundos);
+    };
+    setTimeout(atualizar, milissegundos);
+
+    Promise.resolve().then(() => atualizar());
 }
 
 try {

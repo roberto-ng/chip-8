@@ -18,9 +18,9 @@ export function renderizar(render: IRenderizador, tela: number[][]) {
             const pixel = tela[y][x];
 
             if (pixel !== 0) {
-                render.mudarCor('#ff0000');
+                render.mudarCor('rgb(255, 255, 255)');
             } else {
-                render.mudarCor('#000000');
+                render.mudarCor('rgb(57, 50, 71)');
             }
 
             render.desenharQuadrado(x * 8, y * 8, 8, 8);

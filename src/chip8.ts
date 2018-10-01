@@ -27,7 +27,8 @@ export default class Chip8 {
     /** Buffer representando o teclado do CHIP-8 */
     private _teclado: Uint8Array;
 
-    public static readonly MEMORIA_TAMANHO: number = 0x1000;
+    public static readonly MEMORIA_TAMANHO = 0x1000;
+    public static readonly FONTE_LARGURA = 5;
 
     public constructor() {
         this._opcode = 0;
@@ -172,7 +173,7 @@ export default class Chip8 {
             0xF0, 0x80, 0x80, 0x80, 0xF0, // C
             0xE0, 0x90, 0x90, 0x90, 0xE0, // D
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-            0xF0, 0x80, 0xF0, 0x80, 0x80, // F          
+            0xF0, 0x80, 0xF0, 0x80, 0x80, // F
         ];
 
         for (let i = 0; i < 80; ++i) {
@@ -437,12 +438,6 @@ export default class Chip8 {
         this._v[0xF] = +(this._v[this.x] > this._v[this.y]);
         this._v[this.x] -= this._v[this.y];
 
-        /*
-        if (this._v[this.x] < 0) {
-            this._v[this.x] += 256;
-        }
-        */
-
         this._pc += 2;
     }
 
@@ -471,7 +466,6 @@ export default class Chip8 {
 
         this._v[0xF] = vy > vx ? 1 : 0;
         this._v[this.x] = vy - vx;
-
         this._pc += 2;
     }
 
@@ -483,15 +477,8 @@ export default class Chip8 {
      */
     private op_8x0e_shl(): void {
         let vx = this._v[this.x];
-
-        /*
-        this._v[0xF] = +(this._v[this.x] & 0x80);
-        this._v[this.x] <<= 1;
-        */
-
         this._v[0xF] = vx >> 7;
         this._v[this.x] = vx << 1;
-
         this._pc += 2;
     }
 
@@ -509,8 +496,8 @@ export default class Chip8 {
     }
 
     /**
-     * JMP V0, endereco
-     * Pula para o endereço nnn + V0
+     * LD I, addr
+     * Atribui o valor de addr para I
      */
     private op_annn_ld(): void {
         this._i = this.nnn;
@@ -530,8 +517,7 @@ export default class Chip8 {
      * Vx = byte aleatório & kk
      */
     private op_cxkk_rnd(): void {
-        const byte_aleatorio = Math.floor(Math.random() * 0xFF) & (this._opcode & 0xFF);
-        this._v[this.x] = byte_aleatorio & this.kk;
+        this._v[this.x] = (Math.random() * 0x100) & this.kk;
         this._pc += 2;
     }
 
@@ -654,7 +640,7 @@ export default class Chip8 {
      * Atribui ao I o endereço do sprite correspondente à Vx
      */
     private op_fx29_ld(): void {
-        this._i = this.x * 5;
+        this._i = this._v[this.x] * Chip8.FONTE_LARGURA;
         this._pc += 2;
     }
 
