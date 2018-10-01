@@ -125,6 +125,19 @@ export default class Chip8 {
 
     /** Emula um ciclo da CPU */
     public emularCiclo(): void {
+        if (this._esperandoInput) {
+            this._teclado.forEach(tecla => {
+                if (tecla !== 0) {
+                    // parar de esperar input se o
+                    // usuário pressionar uma tecla
+                    this._esperandoInput = false;
+                    this._v[this._esperandoRegistrador] = tecla;
+                }
+            });
+
+            return;
+        }
+
         this.buscarOpcode();
         this.executarOpcode();
 
@@ -134,7 +147,7 @@ export default class Chip8 {
 
         if (this._somTempo > 0) {
             if (this._somTempo === 1) {
-                console.log("BEEP");
+                // BEEP
             }
 
             --this._somTempo;
@@ -589,8 +602,14 @@ export default class Chip8 {
      * Espera o usuário pressionar uma tecla, e atribui o valor a Vx
      */
     private op_fx0a_ld(): void {
-        this._esperandoRegistrador = this.x;
+        //this._esperandoRegistrador = this.x;
         this._esperandoInput = true;
+        this._esperandoRegistrador = this.x;
+
+        for (let i = 0; i < this._teclado.length; ++i) {
+            this._teclado[i] = 0;
+        }
+
         this._pc += 2;
     }
 

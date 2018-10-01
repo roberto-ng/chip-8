@@ -124,7 +124,7 @@ function main(): void {
                 renderizar(renderizador, chip8.tela);
             }
         }
-    }, 0.01);
+    }, 0.0001);
 }
 
 try {
