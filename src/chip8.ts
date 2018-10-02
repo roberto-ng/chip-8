@@ -258,7 +258,7 @@ export default class Chip8 {
         }
     }
 
-    /** Identifica e executa opcodes que começam com e */
+    /** Identifica e executa opcodes que começam com E */
     private executarOp_exxx(): void {
         switch (this._opcode & 0x00FF) {
             case 0x009E: this.op_ex9e_skp(); break;
