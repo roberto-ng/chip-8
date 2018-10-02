@@ -14,7 +14,8 @@ export default class Chip8 {
     private _delayTempo: number;
     private _somTempo: number;
     private _esperandoInput: boolean;
-    private _esperandoRegistrador: number;
+    /** Registrador estabelecido pela instrução Fx0A */
+    private _esperandoRegs: number;
     private _desenharFlag: boolean;
     /** Array 2D representando a tela do CHIP-8 */
     private _tela: Array<Array<number>>;
@@ -26,6 +27,8 @@ export default class Chip8 {
     private _v: Uint8Array;
     /** Buffer representando o teclado do CHIP-8 */
     private _teclado: Uint8Array;
+    /** Ultima tecla pressionada */
+    private _ultimaTecla: number;
 
     public static readonly MEMORIA_TAMANHO = 0x1000;
     public static readonly FONTE_LARGURA = 5;
@@ -38,13 +41,14 @@ export default class Chip8 {
         this._delayTempo = 0;
         this._somTempo = 0;
         this._esperandoInput = false;
-        this._esperandoRegistrador = 0;
+        this._esperandoRegs = 0;
         this._desenharFlag = false;
         this._tela = new Array(32);
         this._memoria = new Uint8Array(0x1000);
         this._stack = new Uint16Array(16);
         this._v = new Uint8Array(16);
         this._teclado = new Uint8Array(16);
+        this._ultimaTecla = 0;
 
         for (let i = 0; i < 32; ++i) {
             this._tela[i] = new Array(64);
@@ -82,8 +86,9 @@ export default class Chip8 {
         this._delayTempo = 0;
         this._somTempo = 0;
         this._esperandoInput = false;
-        this._esperandoRegistrador = 0;
+        this._esperandoRegs = 0;
         this._desenharFlag = false;
+        this._ultimaTecla = 0;
 
         for (let i = 0; i < 32; ++i) {
             for (let j = 0; j < 64; ++j) {
@@ -132,7 +137,7 @@ export default class Chip8 {
                     // parar de esperar input se o
                     // usuário pressionar uma tecla
                     this._esperandoInput = false;
-                    this._v[this._esperandoRegistrador] = tecla;
+                    this._v[this._esperandoRegs] = this._ultimaTecla;
                 }
             });
 
@@ -196,6 +201,7 @@ export default class Chip8 {
         this._opcode = (primeiro << 8) | segundo;
     }
 
+    /** Identifica e executa o opcode */
     private executarOpcode(): void {
         switch (this._opcode & 0xF000) {
             case 0x0000: this.executarOp_0xxx(); break;
@@ -215,23 +221,25 @@ export default class Chip8 {
             case 0xE000: this.executarOp_exxx(); break;
             case 0xF000: this.executarOp_fxxx(); break;
             default:
-                console.error(`Opcode desconhecido: ${this._opcode}`);
+                console.error(`Opcode desconhecido: ${this.opcodeHex}`);
                 this._pc += 2;
                 break;
         }
     }
 
+    /** Identifica e executa opcodes que começam com 0 */
     private executarOp_0xxx(): void {
         switch (this._opcode & 0x00FF) {
             case 0x00EE: this.op_00ee_ret(); break;
             case 0x00E0: this.op_00e0_clr(); break;
             default:
-                console.error(`Opcode desconhecido: ${this._opcode}`);
+                console.error(`Opcode desconhecido: ${this.opcodeHex}`);
                 this._pc += 2;
                 break;
         }
     }
 
+    /** Identifica e executa opcodes que começam com 8 */
     private executarOp_8xxx(): void {
         switch (this._opcode & 0x000F) {
             case 0x0000: this.op_8xy0_ld(); break;
@@ -244,23 +252,25 @@ export default class Chip8 {
             case 0x0007: this.op_8xy7_subn(); break;
             case 0x000E: this.op_8x0e_shl(); break;
             default:
-                console.error(`Opcode desconhecido: ${this._opcode}`);
+                console.error(`Opcode desconhecido: ${this.opcodeHex}`);
                 this._pc += 2;
                 break;
         }
     }
 
+    /** Identifica e executa opcodes que começam com e */
     private executarOp_exxx(): void {
         switch (this._opcode & 0x00FF) {
             case 0x009E: this.op_ex9e_skp(); break;
             case 0x00A1: this.op_exa1_sknp(); break;
             default:
-                console.error(`Opcode desconhecido: ${this._opcode}`);
+                console.error(`Opcode desconhecido: ${this.opcodeHex}`);
                 this._pc += 2;
                 break;
         }
     }
 
+    /** Identifica e executa opcodes que começam com F */
     private executarOp_fxxx(): void {
         switch (this._opcode & 0x00FF) {
             case 0x0007: this.op_fx07_ld(); break;
@@ -273,7 +283,7 @@ export default class Chip8 {
             case 0x0055: this.op_fx55_ld(); break;
             case 0x0065: this.op_fx65_ld(); break;
             default:
-                console.error(`Opcode desconhecido: ${this._opcode}`);
+                console.error(`Opcode desconhecido: ${this.opcodeHex}`);
                 this._pc += 2;
                 break;
         }
@@ -588,14 +598,8 @@ export default class Chip8 {
      * Espera o usuário pressionar uma tecla, e atribui o valor a Vx
      */
     private op_fx0a_ld(): void {
-        //this._esperandoRegistrador = this.x;
         this._esperandoInput = true;
-        this._esperandoRegistrador = this.x;
-
-        for (let i = 0; i < this._teclado.length; ++i) {
-            this._teclado[i] = 0;
-        }
-
+        this._esperandoRegs = this.x;
         this._pc += 2;
     }
 
@@ -686,6 +690,7 @@ export default class Chip8 {
     /** Registra que uma tecla foi apertada */
     public teclaBaixo(tecla: number): void {
         this._teclado[tecla] = 1;
+        this._ultimaTecla = tecla;
     }
 
     /** Registra que uma tecla foi solta */
@@ -699,6 +704,11 @@ export default class Chip8 {
 
     public get opcode(): number {
         return this._opcode;
+    }
+
+    public get opcodeHex(): string {
+        const hex = this._opcode.toString(16);
+        return '0x' + hex.toUpperCase();
     }
 
     /** As 3 últimas casas (em hexadecimal) do opcode */

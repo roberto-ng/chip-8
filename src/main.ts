@@ -96,6 +96,7 @@ function main(): void {
     setTimeout(atualizar, milissegundos);
 
     Promise.resolve().then(() => atualizar());
+    Promise.resolve().then(() => atualizar());
 }
 
 try {
