@@ -22,8 +22,15 @@ function decodificar(opcode: number): string {
     switch (opcode & 0xF000) {
         // identificar operações que começam com 0
         case 0x0000:
-            // TODO: Implementar busca
-            return op_str;
+            switch (opcode & 0x00FF) {
+                // 00E0
+                case 0x00E0:
+                    return 'CLS';
+                // 00EE
+                case 0x00EE:
+                    return 'RETURN';
+                default: return op_str;
+            }
         // 1nnn
         case 0x1000:
             return `JUMP ${nnn}`;
@@ -47,8 +54,36 @@ function decodificar(opcode: number): string {
             return `ADD v${x}, ${kk}`
         // identificar operações que começam com 8 
         case 0x8000:
-            // TODO: Implementar busca
-            return op_str;
+            switch (opcode & 0x000F) {
+                // 8xy0
+                case 0x0000:
+                    return `LD v${x}, v${y}`;
+                // 8xy1
+                case 0x0001:
+                    return `OR v${x}, v${y}`;
+                // 8xy2
+                case 0x0002:
+                    return `AND v${x}, v${y}`;
+                // 8xy3
+                case 0x0003:
+                    return `XOR v${x}, v${y}`;
+                // 8xy4
+                case 0x0004:
+                    return `ADD v${x}, v${y}`;
+                // 8xy5
+                case 0x0005:
+                    return `SUB v${x}, v${y}`;
+                // 8xy6
+                case 0x0006:
+                    return `SHR v${x}`;
+                // 8xy7
+                case 0x0007:
+                    return `SUBN v${x}, v${y}`;
+                // 8xyE
+                case 0x000E:
+                    return `SHL v${x}`;
+                default: return op_str;
+            }
         // 9xy0
         case 0x9000:
             return `SNE v${x}, v${y}`;
@@ -64,18 +99,50 @@ function decodificar(opcode: number): string {
         // Dxyn
         case 0xD000:
             return `DRW v${x}, v${y}, ${n}`;
-        case 0xE000:
-            return `SKP v${x}`;
         // identificar operações que começam com E
         case 0xE000:
-            // TODO: Implementar busca
-            return op_str;
+            switch (opcode & 0x00FF) {
+                // Ex9E
+                case 0x009E:
+                    return `SKP v${x}`;
+                // ExA1
+                case 0x00A1:
+                    return `SKNP v${x}`;
+                default: return op_str;
+            }
         // identificar operações que começam com F
-        case 0xE000:
-            // TODO: Implementar busca
-            return op_str;
+        case 0xF000:
+            switch (opcode & 0x00FF) {
+                // Fx07
+                case 0x0007:
+                    return `LD v${x}, DT`;
+                // Fx0A
+                case 0x000A:
+                    return `LD v${x}, K`;
+                // Fx15
+                case 0x0015:
+                    return `LD DT, v${x}`;
+                // Fx18
+                case 0x0018:
+                    return `LD ST, v${x}`;
+                // Fx1E    
+                case 0x001E:
+                    return `ADD I, v${x}`;
+                // Fx29    
+                case 0x0029:
+                    return `LD F, v${x}`;
+                // Fx33
+                case 0x0033:
+                    return `LD B, v${x}`;
+                // Fx55
+                case 0x0055:
+                    return `LD [I], v${x}`;
+                // Fx65
+                case 0x0065:
+                    return `LD v${x}, [I]`;
+                default: return op_str;
+            }
         // opcode não encontrado
-        default:
-            return op_str;
+        default: return op_str;
     }
 }
