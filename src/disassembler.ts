@@ -1,9 +1,33 @@
+import Chip8 from './chip8';
+
 function hexParaString(hex: number): string {
     const numero = hex.toString(16);
     return `0x${numero.toUpperCase()}`;
 }
 
-function decodificar(opcode: number): string {
+export function decodificarPrograma(programa: Uint8Array): {[key: number]: string|undefined} {
+    let resultado: {[key: number]: string|undefined} = {};
+
+    if (programa.length > Chip8.MEMORIA_TAMANHO) {
+        throw new Error('O arquivo ultrapassa o tamanho máximo');
+    }
+
+    for (let i = 0; i < programa.length; i += 2) {
+        const byte1 = programa[i];
+        const byte2 = programa[i+1];
+
+        if (byte1 === undefined || byte2 === undefined) {
+            continue;
+        }
+
+        const opcode = (byte1 << 8) | byte2;
+        resultado[i] = decodificarOpcode(opcode);
+    }
+
+    return resultado;
+}
+
+export function decodificarOpcode(opcode: number): string {
     const op_str = hexParaString(opcode);
     const nnn = hexParaString(opcode & 0x0FFF);
     const kk = hexParaString(opcode & 0x00FF);

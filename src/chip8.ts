@@ -698,8 +698,14 @@ export default class Chip8 {
         this._teclado[tecla] = 0;
     }
 
+    /** Os registradores da CPU */
     public get v(): Uint8Array {
         return this._v;
+    }
+
+    /** Contador de programa */
+    public get pc(): number {
+        return this._pc;
     }
 
     public get opcode(): number {
@@ -737,6 +743,10 @@ export default class Chip8 {
 
     public get tela(): number[][] {
         return this._tela;
+    }
+
+    public get memoria(): Uint8Array {
+        return this._memoria;
     }
 
     public get teclado(): Uint8Array {

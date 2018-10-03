@@ -10,10 +10,17 @@
             input#rom-arquivo {
                 margin-top: 10px;
             }
+
+            #instrucoes p.atual {
+                background-color: white;
+                color: rgb(57, 50, 71);
+                padding-left: 7px;
+            }
         </style>
     </head>
     <body>
         <canvas width="512" height="256" id="chip-8"></canvas>
+        <div id="instrucoes"></div>
         <br/>
         <input type="file" id="rom-arquivo"/>
         <script src='./dist/build.js'></script>
