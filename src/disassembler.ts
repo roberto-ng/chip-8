@@ -12,7 +12,11 @@ export function decodificarPrograma(programa: Uint8Array): {[key: number]: strin
         throw new Error('O arquivo ultrapassa o tamanho máximo');
     }
 
-    for (let i = 0; i < programa.length; i += 2) {
+    for (let i = 0; i < programa.length; i++) {
+        if (i+1 > programa.length) {
+            continue;
+        }
+
         const byte1 = programa[i];
         const byte2 = programa[i+1];
 

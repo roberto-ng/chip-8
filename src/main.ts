@@ -48,21 +48,31 @@ function removerFilhos(div: HTMLDivElement) {
     }
 }
 
+/** Checa se o número é par */
+function par(num: number): boolean {
+    return num % 2 === 0;
+}
+
 function renderizarAssembly(chip8: Chip8, div_pai: HTMLDivElement) {
     let instrucoes: string[] = [];
-    let inicio = chip8.pc - 8;
+    let inicio = chip8.pc - 6;
 
-    for (let i = 0; i < 20; ++i) {
-        const endereco = i + inicio;
+    for (let i = 0; i < 12; ++i) {
+        const endereco = (i + inicio);
         const enderHex = endereco.toString(16).toUpperCase();
         let instrucao = assembly[endereco];
 
-        if (typeof instrucao === 'string') {
-            if (endereco+2 === chip8.pc) {
-                instrucoes.push(`->  0x${enderHex}: ${instrucao}`);
-            }
-            else {
-                instrucoes.push(`0x${enderHex}: ${instrucao}`);
+        // só mostrar a instrução caso tanto o pc quanto 
+        // o endereço forem pares ou forem impares
+        if ( (par(chip8.pc) &&  par(endereco)) ||
+            (!par(chip8.pc) && !par(endereco))) {
+            if (typeof instrucao === 'string') {
+                if (endereco === chip8.pc) {
+                    instrucoes.push(`->  0x${enderHex}: ${instrucao}`);
+                }
+                else {
+                    instrucoes.push(`0x${enderHex}: ${instrucao}`);
+                }
             }
         }
     }
@@ -109,7 +119,7 @@ function main(): void {
         return;
     }
 
-    document.addEventListener("keydown", e => {
+    document.addEventListener('keydown', e => {
         try {
             chip8.teclaBaixo(traduzirInput(e.keyCode));
         }
@@ -117,7 +127,7 @@ function main(): void {
         }
     });
 
-    document.addEventListener("keyup", e => {
+    document.addEventListener('keyup', e => {
         try {
            chip8.teclaCima(traduzirInput(e.keyCode));
         }
@@ -144,13 +154,12 @@ function main(): void {
 
     const atualizar = () => {
         if (jogoCarregado) {
+            renderizarAssembly(chip8, divInstrucoes);
             chip8.emularCiclo();
 
             if (chip8.desenharFlag) {
                 renderizar(renderizador, chip8.tela);
             }
-
-            renderizarAssembly(chip8, divInstrucoes);
         }
 
         setTimeout(atualizar, milissegundos);
