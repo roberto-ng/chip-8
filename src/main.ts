@@ -1,6 +1,7 @@
 /**
  * @author Roberto Nazareth Guedes
  */
+import 'whatwg-fetch'
 
 import Chip8 from './chip8';
 import RenderizadorCanvas from './renderizadorCanvas';
@@ -9,6 +10,7 @@ import { traduzirInput } from './input';
 import { decodificarPrograma } from './disassembler';
 
 let jogoCarregado = false;
+let arquivoEnviado = false;
 let assembly: {[key: number]: string|undefined} = {};
 
 /**
@@ -42,7 +44,7 @@ function enviarPrograma(chip8: Chip8, arquivo: Blob): void {
  * Remove os elementos filhos de um div 
  * @param div O div a ter os elementos filhos removidos
  */
-function removerFilhos(div: HTMLDivElement) {
+function removerFilhos(div: HTMLDivElement): void {
     while (div.firstChild) {
         div.removeChild(div.firstChild);
     }
@@ -53,7 +55,7 @@ function par(num: number): boolean {
     return num % 2 === 0;
 }
 
-function renderizarAssembly(chip8: Chip8, div_pai: HTMLDivElement) {
+function renderizarAssembly(chip8: Chip8, div_pai: HTMLDivElement): void {
     let instrucoes: string[] = [];
     let inicio = chip8.pc - 6;
 
@@ -113,6 +115,12 @@ function main(): void {
         return;
     }
 
+    const select: HTMLSelectElement|null = document.querySelector('select#rom-select');
+    if (select === null) {
+        console.error('Erro: elemento select não encontrado');
+        return;
+    }
+
     const divInstrucoes = document.querySelector('div#instrucoes');
     if (!(divInstrucoes instanceof HTMLDivElement)) {
         console.error('Erro: div de instruções não encontrado');
@@ -129,6 +137,26 @@ function main(): void {
         throw new Error('Botões não encontrados');
     }
 
+    /** Carrega a rom descrita no elemento select */
+    const carregarRomSelect = () => {
+        let romNome = select.options[select.selectedIndex].value;
+        if (typeof romNome !== 'string') {
+            return;
+        }
+
+        fetch(`/roms/${romNome}`)
+            .then(resposta => resposta.blob())
+            .then(arquivo => {
+                enviarPrograma(chip8, arquivo);
+                pauseBtn.disabled = false;
+                playBtn.disabled = true;
+                stepBtn.disabled = true; 
+                arquivoEnviado = false;
+                select.blur();
+            })
+            .catch(err => console.error(err));
+    };
+
     // reseta a maquina virtual quando o botão
     // for pressionado
     resetarBtn.onclick = e => {
@@ -136,8 +164,13 @@ function main(): void {
 
         // enviar programa haja um arquivo no input,
         // recarregar ele
-        if (input.files !== null && input.files[0] !== null) {
-            enviarPrograma(chip8, input.files[0]);
+
+        if (arquivoEnviado) {
+            if (input.files !== null && input.files[0] !== null) {
+                enviarPrograma(chip8, input.files[0]);
+            }
+        } else {
+            carregarRomSelect();
         }
 
         pauseBtn.disabled = false;
@@ -192,12 +225,15 @@ function main(): void {
             pauseBtn.disabled = false;
             playBtn.disabled = true;
             stepBtn.disabled = true;
+            arquivoEnviado = true;
         });
     }
     catch (e) {
         window.alert(e);
         console.error(e);
     }
+
+    select.onchange = e => carregarRomSelect();
     
     let milissegundos = 2;
 
@@ -217,6 +253,8 @@ function main(): void {
 
     Promise.resolve().then(() => atualizar());
     Promise.resolve().then(() => atualizar());
+
+    carregarRomSelect();
 }
 
 try {

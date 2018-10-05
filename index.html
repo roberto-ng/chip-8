@@ -64,6 +64,10 @@
             .botao:disabled {
                 background: gray;
             }
+
+            a {
+                color: azure;
+            }
         </style>
     </head>
     <body>
@@ -78,7 +82,35 @@
             <button class="botao" id="chip-8-step" disabled>▐►</button>
         </div>
         <br/>
+        <label>Escolha uma rom: </label>
+        <select id="rom-select">
+            <option value="BLINKY">BLINKY</option>
+            <option value="BRIX" selected="selected">BRIX</option>
+            <option value="INVADERS">INVADERS</option>
+            <option value="KALEID">KALEID</option>
+            <option value="MAZE">MAZE</option>
+            <option value="MISSILE">MISSILE</option>
+            <option value="PONG2">PONG2</option>
+            <option value="TANK">TANK</option>
+            <option value="TETRIS">TETRIS</option>
+            <option value="TICTAC">TICTAC</option>
+            <option value="UFO">UFO</option>
+            <option value="WIPEOFF">WIPEOFF</option>
+        </select>
+        <br/>
+        <label>Ou envie uma rom: </label>
         <input type="file" id="rom-arquivo"/>
+        <br/>
+        <p>
+            Código fonte disponivel em: 
+            <a
+                target="_blank" 
+                href="https://gitlab.com/robertonazareth/chip-8"
+                >
+                https://gitlab.com/robertonazareth/chip-8
+            </a>
+        </p>
+
         <script src='./dist/build.js'></script>
     </body>
 </html>
