@@ -119,6 +119,52 @@ function main(): void {
         return;
     }
 
+    const resetarBtn: HTMLButtonElement|null = document.querySelector('#chip-8-resetar');
+    const pauseBtn: HTMLButtonElement|null = document.querySelector('#chip-8-pause');
+    const playBtn: HTMLButtonElement|null = document.querySelector('#chip-8-play');
+    const stepBtn: HTMLButtonElement|null = document.querySelector('#chip-8-step');
+
+    if (pauseBtn === null || playBtn === null ||
+        stepBtn === null || resetarBtn === null) {
+        throw new Error('Botões não encontrados');
+    }
+
+    // reseta a maquina virtual quando o botão
+    // for pressionado
+    resetarBtn.onclick = e => {
+        chip8.resetar();
+
+        // enviar programa haja um arquivo no input,
+        // recarregar ele
+        if (input.files !== null && input.files[0] !== null) {
+            enviarPrograma(chip8, input.files[0]);
+        }
+
+        pauseBtn.disabled = false;
+        playBtn.disabled = true;
+        stepBtn.disabled = true;
+    };
+
+    pauseBtn.onclick = e => {
+        chip8.pausar();
+
+        pauseBtn.disabled = true;
+        playBtn.disabled = false;
+        stepBtn.disabled = false;
+    };
+
+    playBtn.onclick = e => {
+        chip8.play();
+
+        pauseBtn.disabled = false;
+        playBtn.disabled = true;
+        stepBtn.disabled = true;
+    };
+
+    stepBtn.onclick = e => {
+        chip8.step();
+    };
+
     document.addEventListener('keydown', e => {
         try {
             chip8.teclaBaixo(traduzirInput(e.keyCode));
@@ -143,6 +189,9 @@ function main(): void {
             }
 
             enviarPrograma(chip8, this.files[0]);
+            pauseBtn.disabled = false;
+            playBtn.disabled = true;
+            stepBtn.disabled = true;
         });
     }
     catch (e) {

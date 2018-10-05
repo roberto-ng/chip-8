@@ -29,6 +29,10 @@ export default class Chip8 {
     private _teclado: Uint8Array;
     /** Ultima tecla pressionada */
     private _ultimaTecla: number;
+    /** Se a máquina virtual está pausada ou não */
+    private _pausado: boolean;
+    /** Se a máquina virtual deve executar uma instrução quando pausado */
+    private _step: boolean;
 
     public static readonly MEMORIA_TAMANHO = 0x1000;
     public static readonly FONTE_LARGURA = 5;
@@ -49,6 +53,8 @@ export default class Chip8 {
         this._v = new Uint8Array(16);
         this._teclado = new Uint8Array(16);
         this._ultimaTecla = 0;
+        this._pausado = false;
+        this._step = false;
 
         for (let i = 0; i < 32; ++i) {
             this._tela[i] = new Array(64);
@@ -89,6 +95,8 @@ export default class Chip8 {
         this._esperandoRegs = 0;
         this._desenharFlag = false;
         this._ultimaTecla = 0;
+        this._pausado = false;
+        this._step = false;
 
         for (let i = 0; i < 32; ++i) {
             for (let j = 0; j < 64; ++j) {
@@ -115,6 +123,23 @@ export default class Chip8 {
         this.carregarFonte();
     }
 
+    /** Pausa o emulador */
+    public pausar(): void {
+        this._pausado = true;
+    }
+
+    /** Dá play no emulador */
+    public play(): void {
+        this._pausado = false;
+        this._step = false;
+    }
+
+    public step(): void {
+        if (this._pausado) {
+            this._step = true;
+        }
+    }
+
     /** 
      * Carrega um programa na memória
      * @param buffer Programa a ser carregado na memória
@@ -131,6 +156,16 @@ export default class Chip8 {
 
     /** Emula um ciclo da CPU */
     public emularCiclo(): void {
+        this.buscarOpcode();
+
+        if (this._pausado) {
+            if (this._step) {
+                this._step = false;   
+            } else {
+                return;
+            }
+        }
+
         if (this._esperandoInput) {
             this._teclado.forEach(tecla => {
                 if (tecla !== 0) {
@@ -138,13 +173,13 @@ export default class Chip8 {
                     // usuário pressionar uma tecla
                     this._esperandoInput = false;
                     this._v[this._esperandoRegs] = this._ultimaTecla;
+                    this._pc += 2;
                 }
             });
 
             return;
         }
 
-        this.buscarOpcode();
         this.executarOpcode();
 
         if (this._delayTempo > 0) {
@@ -600,7 +635,7 @@ export default class Chip8 {
     private op_fx0a_ld(): void {
         this._esperandoInput = true;
         this._esperandoRegs = this.x;
-        this._pc += 2;
+        //this._pc += 2;
     }
 
     /**

@@ -49,12 +49,33 @@
             canvas#chip-8 {
                 border-right: 2px solid rgb(57, 50, 71);
             }
+
+            .botao {
+                background: white;
+                color: rgb(57, 50, 71);
+                border: none;
+                border-radius: 8px;
+                outline: none;
+                padding: 10px;
+                margin-top: 5px;
+                height: 40px;
+            }
+
+            .botao:disabled {
+                background: gray;
+            }
         </style>
     </head>
     <body>
         <div id="emulador-container">
             <canvas width="512" height="256" id="chip-8"></canvas>
             <div id="instrucoes"></div>
+        </div>
+        <div id="emulador-botoes">
+            <button class="botao" id="chip-8-resetar">Resetar</button>
+            <button class="botao" id="chip-8-pause">▐ ▌</button>
+            <button class="botao" id="chip-8-play" disabled>►</button>
+            <button class="botao" id="chip-8-step" disabled>▐►</button>
         </div>
         <br/>
         <input type="file" id="rom-arquivo"/>
