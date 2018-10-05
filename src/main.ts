@@ -144,7 +144,7 @@ function main(): void {
             return;
         }
 
-        fetch(`/roms/${romNome}`)
+        fetch(`roms/${romNome}`)
             .then(resposta => resposta.blob())
             .then(arquivo => {
                 enviarPrograma(chip8, arquivo);
