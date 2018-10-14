@@ -50,7 +50,7 @@
                 border-right: 2px solid rgb(57, 50, 71);
             }
 
-            .botao {
+            .botao, .teclado-btn {
                 background: white;
                 color: rgb(57, 50, 71);
                 border: none;
@@ -63,6 +63,10 @@
 
             .botao:disabled {
                 background: gray;
+            }
+
+            .teclado-btn {
+                width: 40px;
             }
 
             a {
@@ -80,6 +84,28 @@
             <button class="botao" id="chip-8-pause">▐ ▌</button>
             <button class="botao" id="chip-8-play" disabled>►</button>
             <button class="botao" id="chip-8-step" disabled>▐►</button>
+        </div>
+        <br/>
+        <div id="teclado-virtual">
+            <button class="teclado-btn">1</button>
+            <button class="teclado-btn">2</button>
+            <button class="teclado-btn">3</button>
+            <button class="teclado-btn">C</button>
+            <br/>
+            <button class="teclado-btn">4</button>
+            <button class="teclado-btn">5</button>
+            <button class="teclado-btn">6</button>
+            <button class="teclado-btn">D</button>
+            <br/>
+            <button class="teclado-btn">7</button>
+            <button class="teclado-btn">8</button>
+            <button class="teclado-btn">9</button>
+            <button class="teclado-btn">E</button>
+            <br/>
+            <button class="teclado-btn">A</button>
+            <button class="teclado-btn">0</button>
+            <button class="teclado-btn">B</button>
+            <button class="teclado-btn">F</button>
         </div>
         <br/>
         <label>Escolha uma rom: </label>
@@ -104,7 +130,7 @@
         <p>
             Código fonte disponível em: 
             <a
-                target="_blank" 
+                target="_blank"
                 href="https://gitlab.com/robertonazareth/chip-8"
                 >
                 https://gitlab.com/robertonazareth/chip-8

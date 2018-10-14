@@ -131,30 +131,49 @@ function main(): void {
     const pauseBtn: HTMLButtonElement|null = document.querySelector('#chip-8-pause');
     const playBtn: HTMLButtonElement|null = document.querySelector('#chip-8-play');
     const stepBtn: HTMLButtonElement|null = document.querySelector('#chip-8-step');
+    const tecladoBotoes = document.querySelectorAll('div#teclado-virtual .teclado-btn');
 
     if (pauseBtn === null || playBtn === null ||
-        stepBtn === null || resetarBtn === null) {
+        stepBtn === null || resetarBtn === null ||
+        tecladoBotoes === null) {
         throw new Error('Botões não encontrados');
     }
 
+    tecladoBotoes.forEach(teclaBtn => {
+        if (teclaBtn instanceof HTMLButtonElement) {
+            // transforma o valor HEX do botão em um número
+            const tecla = parseInt(teclaBtn.innerHTML, 16);
+            if (isNaN(tecla)) { return; }
+
+            // evento que registra que o usuário pressionou uma tecla
+            teclaBtn.onmousedown = e => chip8.teclaBaixo(tecla);
+            // eveto que registra que o usuário soltou uma tecla
+            teclaBtn.onmouseup = e => chip8.teclaCima(tecla);
+        }
+    });
+
     /** Carrega a rom descrita no elemento select */
-    const carregarRomSelect = () => {
+    const carregarRomSelect = async () => {
         let romNome = select.options[select.selectedIndex].value;
         if (typeof romNome !== 'string') {
             return;
         }
 
-        fetch(`roms/${romNome}`)
-            .then(resposta => resposta.blob())
-            .then(arquivo => {
-                enviarPrograma(chip8, arquivo);
-                pauseBtn.disabled = false;
-                playBtn.disabled = true;
-                stepBtn.disabled = true; 
-                arquivoEnviado = false;
-                select.blur();
-            })
-            .catch(err => console.error(err));
+        try {
+            const resposta = await fetch(`roms/${romNome}`);
+            const arquivo = await resposta.blob();
+         
+            enviarPrograma(chip8, arquivo);
+         
+            pauseBtn.disabled = false;
+            playBtn.disabled = true;
+            stepBtn.disabled = true; 
+            arquivoEnviado = false;
+            select.blur();
+        }
+        catch (e) {
+            console.error(e);
+        }
     };
 
     // reseta a maquina virtual quando o botão

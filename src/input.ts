@@ -27,7 +27,7 @@ export function traduzirInput(tecla_pc: number): number {
     const tecla_chip8 = teclas[tecla_pc];
 
     // se o valor não estiver no hashmap
-    if (typeof tecla_chip8 === 'undefined' || tecla_chip8 === 0) {
+    if (typeof tecla_chip8 === 'undefined') {
         throw new Error('tecla não encontrada');
     }
 
