@@ -206,6 +206,7 @@ export default class Emulador {
         this._select.onchange = e => this.eventoCarregarROMSelect();
         this._resetarBtn.onclick = e => this.eventoResetarBtn(e);
         this._pauseBtn.onclick = e => this.eventoPauseBtn(e);
+        this._playBtn.onclick = e => this.eventoPlayBtn(e);
         this._stepBtn.onclick = e => this.eventoStepBtn(e);
 
         // busca um array com os botões do teclado virtual
