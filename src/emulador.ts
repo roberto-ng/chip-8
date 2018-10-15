@@ -223,8 +223,11 @@ export default class Emulador {
     
                 // evento que registra que o usuário pressionou uma tecla
                 teclaBtn.onmousedown = e => this._chip8.teclaBaixo(tecla);
+                teclaBtn.ontouchstart = e => this._chip8.teclaBaixo(tecla);
+
                 // eveto que registra que o usuário soltou uma tecla
                 teclaBtn.onmouseup = e => this._chip8.teclaCima(tecla);
+                teclaBtn.ontouchend = e => this._chip8.teclaCima(tecla);
             }
         });
         document.addEventListener('keydown', e => {
