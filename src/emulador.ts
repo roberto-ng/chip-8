@@ -283,27 +283,25 @@ export default class Emulador {
     }
 
     /** Inicia a máquina virtual */
-    public iniciarLoop() {
-        const milissegundos = 4;
-    
+    public iniciarLoop() {    
+        // executar 10 insturções por frame
+        const execPorFrame = 10;
+
         const atualizar = () => {
             if (this._jogoCarregado) {
-                this.renderizarAssembly();
-                this._chip8.emularCiclo();
-    
-                if (this._chip8.desenharFlag) {
-                    renderizar(this._renderizador, this._chip8.tela);
+                for (let i = 0; i < execPorFrame; ++i) {
+                    this.renderizarAssembly();
+                    this._chip8.emularCiclo();
+        
+                    if (this._chip8.desenharFlag) {
+                        renderizar(this._renderizador, this._chip8.tela);
+                    }
                 }
             }
     
-            setTimeout(atualizar, milissegundos);
+            window.requestAnimationFrame(atualizar);
         };
-        setTimeout(atualizar, milissegundos);
-
-        atualizar();
-        atualizar();
-        atualizar();
-        atualizar();
+        window.requestAnimationFrame(atualizar);
 
         this.eventoCarregarROMSelect();
     }
