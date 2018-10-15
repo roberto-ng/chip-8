@@ -50,6 +50,14 @@
                 border-right: 2px solid rgb(57, 50, 71);
             }
 
+            #teclado-virtual, .nao-selecionar {
+                user-select: none;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -o-user-select: none;
+            }
+
             .botao, .teclado-btn {
                 background: white;
                 color: rgb(57, 50, 71);
@@ -79,7 +87,7 @@
             <canvas width="512" height="256" id="chip-8"></canvas>
             <div id="instrucoes"></div>
         </div>
-        <div id="emulador-botoes">
+        <div id="emulador-botoes" class="nao-selecionar">
             <button class="botao" id="chip-8-resetar">Resetar</button>
             <button class="botao" id="chip-8-pause">▐ ▌</button>
             <button class="botao" id="chip-8-play" disabled>►</button>
@@ -108,8 +116,8 @@
             <button class="teclado-btn">F</button>
         </div>
         <br/>
-        <label>Escolha uma rom: </label>
-        <select id="rom-select">
+        <label class="nao-selecionar">Escolha uma rom: </label>
+        <select id="rom-select" class="nao-selecionar">
             <option value="BLINKY">BLINKY</option>
             <option value="BRIX" selected="selected">BRIX</option>
             <option value="INVADERS">INVADERS</option>
@@ -123,8 +131,8 @@
             <option value="WIPEOFF">WIPEOFF</option>
         </select>
         <br/>
-        <label>Ou envie uma rom: </label>
-        <input type="file" id="rom-arquivo"/>
+        <label class="nao-selecionar">Ou envie uma rom: </label>
+        <input type="file" id="rom-arquivo" class="nao-selecionar"/>
         <br/>
         <p>
             Código fonte disponível em: 
