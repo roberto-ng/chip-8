@@ -5,9 +5,10 @@
  */
 
 export default interface IRenderizador {
-    mudarCor(cor: string): void;
+    mudarCor(r: number, g: number, b: number): void;
     desenharQuadrado(x: number, y: number, l: number, a: number): void;
     limparTela(): void;
+    encerrarFrame(): void;
 }
 
 export function renderizar(render: IRenderizador, tela: number[][]) {
@@ -18,9 +19,9 @@ export function renderizar(render: IRenderizador, tela: number[][]) {
             const pixel = tela[y][x];
 
             if (pixel !== 0) {
-                render.mudarCor('rgb(255, 255, 255)');
+                render.mudarCor(255, 255, 255);
             } else {
-                render.mudarCor('rgb(57, 50, 71)');
+                render.mudarCor(57, 50, 71);
             }
 
             render.desenharQuadrado(x * 8, y * 8, 8, 8);

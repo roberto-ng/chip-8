@@ -6,9 +6,10 @@ import 'whatwg-fetch'
 
 import Chip8 from './chip8';
 import RenderizadorCanvas from './renderizadorCanvas';
+import RenderizadorWebGL from './renderizadorWebGL';
 import { decodificarPrograma } from './disassembler';
 import { traduzirInput } from './input';
-import { renderizar } from './renderizador';
+import IRenderizador, { renderizar } from './renderizador';
 
 /** 
  * Remove os elementos filhos de um div 
@@ -33,7 +34,7 @@ export default class Emulador {
     private _chip8: Chip8;
 
     /** Objeto que irá desenhar no canvas */
-    private _renderizador: RenderizadorCanvas;
+    private _renderizador: IRenderizador;
 
     /** Se há um jogo carregado */
     private _jogoCarregado: boolean;
@@ -85,14 +86,14 @@ export default class Emulador {
         if (canvas === null) {
             throw new Error('Erro ao buscar canvas');
         }
-    
+
         const ctx = canvas.getContext('2d');
         if (ctx === null) {
             throw new Error('Erro ao buscar contexto do canvas');
         }
 
         this._renderizador = new RenderizadorCanvas(ctx);
-
+    
         const select: HTMLSelectElement|null = document.querySelector('select#rom-select');
         if (select !== null) {
             this._select = select;
@@ -292,13 +293,19 @@ export default class Emulador {
 
         const atualizar = () => {
             if (this._jogoCarregado) {
+                let desenhar = false;
+
                 for (let i = 0; i < execPorFrame; ++i) {
                     this.renderizarAssembly();
                     this._chip8.emularCiclo();
-        
+                    
                     if (this._chip8.desenharFlag) {
-                        renderizar(this._renderizador, this._chip8.tela);
+                        desenhar = true;
                     }
+                }
+
+                if (desenhar) {
+                    renderizar(this._renderizador, this._chip8.tela);
                 }
             }
     

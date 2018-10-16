@@ -18,8 +18,8 @@ export default class RenderizadorCanvas implements IRenderizador {
         this._altura = this.PIXEL_TAMANHO * 32;
     }
 
-    public mudarCor(cor: string): void {
-        this._ctx.fillStyle = cor;
+    public mudarCor(r: number, g: number, b: number): void {
+        this._ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     }
 
     public desenharQuadrado(x: number, y: number, l: number, a: number): void {
@@ -28,5 +28,8 @@ export default class RenderizadorCanvas implements IRenderizador {
 
     public limparTela(): void {
         this._ctx.clearRect(0, 0, this._largura, this._altura);
+    }
+
+    public encerrarFrame(): void {
     }
 }
