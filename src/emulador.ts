@@ -230,6 +230,7 @@ export default class Emulador {
                 teclaBtn.ontouchstart = e => this._chip8.teclaBaixo(tecla);
 
                 // eveto que registra que o usuário soltou uma tecla
+                teclaBtn.onmouseleave = e => this._chip8.teclaCima(tecla);
                 teclaBtn.onmouseup = e => this._chip8.teclaCima(tecla);
                 teclaBtn.ontouchend = e => this._chip8.teclaCima(tecla);
             }
