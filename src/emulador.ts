@@ -68,12 +68,15 @@ export default class Emulador {
     /** Elemento 'input' que permite que o usuário envie suas próprias ROMs */
     private _input: HTMLInputElement;
 
+    /** Dobra a quantidade de instruções executadas por frame */
+    private _dobrarVelocidade: boolean;
+
     public constructor() {
         this._chip8 = new Chip8();
         this._jogoCarregado = false;
         this._arquivoEnviado = false;
+        this._dobrarVelocidade = false;
         this._assembly = {};
-
         
         const divInstrucoes: HTMLDivElement|null = document.querySelector('div#instrucoes');
         if (divInstrucoes !== null) {
@@ -254,7 +257,10 @@ export default class Emulador {
                 return;
             }
 
+            self._chip8.resetar();
             self.enviarPrograma(this.files[0]);
+            renderizar(self._renderizador, self._chip8.tela);
+            self._dobrarVelocidade = false;
             self._pauseBtn.disabled = false;
             self._playBtn.disabled = true;
             self._stepBtn.disabled = true;
@@ -268,11 +274,20 @@ export default class Emulador {
             return;
         }
 
+        // dobrar velocidade se a rom for do jogo BLINKY
+        if (romNome === 'BLINKY') {
+            this._dobrarVelocidade = true;
+        } else {
+            this._dobrarVelocidade = false;
+        }
+
         try {
             const resposta = await fetch(`roms/${romNome}`);
             const arquivo = await resposta.blob();
         
+            this._chip8.resetar();
             this.enviarPrograma(arquivo);
+            renderizar(this._renderizador, this._chip8.tela);
         
             this._pauseBtn.disabled = false;
             this._playBtn.disabled = true;
@@ -294,8 +309,14 @@ export default class Emulador {
         const atualizar = () => {
             if (this._jogoCarregado) {
                 let desenhar = false;
+                let qtd = execPorFrame;
+                
+                // dobra a velocidade se necessário
+                if (this._dobrarVelocidade) {
+                    qtd = execPorFrame * 2;
+                }
 
-                for (let i = 0; i < execPorFrame; ++i) {
+                for (let i = 0; i < qtd; ++i) {
                     this.renderizarAssembly();
                     this._chip8.emularCiclo();
                     
