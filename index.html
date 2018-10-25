@@ -1,6 +1,12 @@
 <html>
     <head>
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+        <meta 
+            name='viewport' 
+            content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' 
+        />
+        <title>Chip-8 TS</title>
+        <meta name="theme-color" content="#393247" />
         <style>
             body {
                 background: rgb(57, 50, 71);
@@ -69,6 +75,11 @@
                 height: 40px;
             }
 
+            .botao {
+                padding: 0;
+                width: 55px;
+            }
+
             .botao:disabled {
                 background: gray;
             }
@@ -79,6 +90,50 @@
 
             a {
                 color: azure;
+            }
+
+            @media only screen and (max-width: 900px) {
+                div#emulador-container {
+                    border: none;
+                    padding: 0;
+                    background-color: rgb(57, 50, 71);
+                    max-width: 100%; 
+                    height: auto;
+                }
+
+                div#emulador-container canvas {
+                    position: relative;
+                    width: 100%;
+                    max-width: 100%;
+                }
+
+                #emulador-botoes {
+                    text-align: center;
+                }
+
+                #teclado-virtual {
+                    text-align: center;
+                }
+
+                #chip-8-resetar {
+                    position: relative;
+                    bottom: 2px;
+                }
+
+                .teclado-btn {
+                    width: 50px;
+                    height: 50px;
+                    margin-top: 5px;
+                    margin-left: 0;
+                }
+
+                div#instrucoes {
+                    display: none;
+                }
+
+                #rom-arquivo-label, #rom-arquivo {
+                    display: none;
+                } 
             }
         </style>
     </head>
@@ -131,7 +186,7 @@
             <option value="WIPEOFF">WIPEOFF</option>
         </select>
         <br/>
-        <label class="nao-selecionar">Ou envie uma rom: </label>
+        <label class="nao-selecionar" id="rom-arquivo-label">Ou envie uma rom: </label>
         <input type="file" id="rom-arquivo" class="nao-selecionar"/>
         <br/>
         <p>
