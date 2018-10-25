@@ -33,9 +33,6 @@ export default class Emulador {
     /** Instancia da máquina virtual */
     private _chip8: Chip8;
 
-    /** Objeto que irá desenhar no canvas */
-    private _renderizador: IRenderizador;
-
     /** Se há um jogo carregado */
     private _jogoCarregado: boolean;
 
@@ -72,7 +69,6 @@ export default class Emulador {
     private _dobrarVelocidade: boolean;
 
     public constructor() {
-        this._chip8 = new Chip8();
         this._jogoCarregado = false;
         this._arquivoEnviado = false;
         this._dobrarVelocidade = false;
@@ -95,7 +91,7 @@ export default class Emulador {
             throw new Error('Erro ao buscar contexto do canvas');
         }
 
-        this._renderizador = new RenderizadorCanvas(ctx);
+        const renderizador = new RenderizadorCanvas(ctx);
     
         const select: HTMLSelectElement|null = document.querySelector('select#rom-select');
         if (select !== null) {
@@ -125,6 +121,8 @@ export default class Emulador {
         } else {
             throw new Error('Erro: elemento input não encontrado');
         }
+
+        this._chip8 = new Chip8(renderizador);
 
         this.registrarEventos();
     }
@@ -260,7 +258,7 @@ export default class Emulador {
 
             self._chip8.resetar();
             self.enviarPrograma(this.files[0]);
-            renderizar(self._renderizador, self._chip8.tela);
+            
             self._dobrarVelocidade = false;
             self._pauseBtn.disabled = false;
             self._playBtn.disabled = true;
@@ -288,7 +286,6 @@ export default class Emulador {
         
             this._chip8.resetar();
             this.enviarPrograma(arquivo);
-            renderizar(this._renderizador, this._chip8.tela);
         
             this._pauseBtn.disabled = false;
             this._playBtn.disabled = true;
@@ -309,7 +306,6 @@ export default class Emulador {
 
         const atualizar = () => {
             if (this._jogoCarregado) {
-                let desenhar = false;
                 let qtd = execPorFrame;
                 
                 // dobra a velocidade se necessário
@@ -320,14 +316,6 @@ export default class Emulador {
                 for (let i = 0; i < qtd; ++i) {
                     this.renderizarAssembly();
                     this._chip8.emularCiclo();
-                    
-                    if (this._chip8.desenharFlag) {
-                        desenhar = true;
-                    }
-                }
-
-                if (desenhar) {
-                    renderizar(this._renderizador, this._chip8.tela);
                 }
             }
     

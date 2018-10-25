@@ -1,3 +1,5 @@
+import IRenderizador, { renderizar } from "./renderizador";
+
 /**
  * @fileoverview Máquina vírtual do CHIP-8
  * @author Roberto Nazareth Guedes
@@ -34,10 +36,12 @@ export default class Chip8 {
     /** Se a máquina virtual deve executar uma instrução quando pausado */
     private _step: boolean;
 
+    private _renderizador: IRenderizador;
+
     public static readonly MEMORIA_TAMANHO = 0x1000;
     public static readonly FONTE_LARGURA = 5;
 
-    public constructor() {
+    public constructor(render: IRenderizador) {
         this._opcode = 0;
         this._sp = 0
         this._pc = 0x200;
@@ -47,19 +51,20 @@ export default class Chip8 {
         this._esperandoInput = false;
         this._esperandoRegs = 0;
         this._desenharFlag = false;
-        this._tela = new Array(32);
+        this._tela = new Array(0x20);
         this._memoria = new Uint8Array(0x1000);
-        this._stack = new Uint16Array(16);
-        this._v = new Uint8Array(16);
-        this._teclado = new Uint8Array(16);
+        this._stack = new Uint16Array(0x10);
+        this._v = new Uint8Array(0x10);
+        this._teclado = new Uint8Array(0x10);
         this._ultimaTecla = 0;
         this._pausado = false;
         this._step = false;
+        this._renderizador = render;
 
-        for (let i = 0; i < 32; ++i) {
-            this._tela[i] = new Array(64);
+        for (let i = 0; i < 0x20; ++i) {
+            this._tela[i] = new Array(0x40);
 
-            for (let j = 0; j < 64; ++j) {
+            for (let j = 0; j < 0x40; ++j) {
                 this._tela[i][j] = 0;
             }
         }
@@ -98,8 +103,8 @@ export default class Chip8 {
         this._pausado = false;
         this._step = false;
 
-        for (let i = 0; i < 32; ++i) {
-            for (let j = 0; j < 64; ++j) {
+        for (let i = 0; i < 0x20; ++i) {
+            for (let j = 0; j < 0x40; ++j) {
                 this._tela[i][j] = 0;
             }
         }
@@ -108,19 +113,20 @@ export default class Chip8 {
             this._memoria[i] = 0;
         }
 
-        for (let i = 0; i < 16; ++i) {
+        for (let i = 0; i < this._stack.length; ++i) {
             this._stack[i] = 0;
         }
 
-        for (let i = 0; i < 16; ++i) {
+        for (let i = 0; i < this._v.length; ++i) {
             this._v[i] = 0;
         }
 
-        for (let i = 0; i < 16; ++i) {
+        for (let i = 0; i < this._teclado.length; ++i) {
             this._teclado[i] = 0;
         }
 
         this.carregarFonte();
+        renderizar(this._renderizador, this._tela);
     }
 
     /** Pausa o emulador */
@@ -159,11 +165,12 @@ export default class Chip8 {
         this.buscarOpcode();
 
         if (this._pausado) {
-            if (this._step) {
-                this._step = false;   
-            } else {
+            if (!this._step) {
                 return;
             }
+
+            // executar mais uma instrução mesmo pausado
+            this._step = false;
         }
 
         if (this._esperandoInput) {
@@ -334,6 +341,9 @@ export default class Chip8 {
                 this._tela[i][j] = 0;
             }
         }
+
+        this._renderizador.limparTela();
+        renderizar(this._renderizador, this._tela);
 
         this._desenharFlag = true;
         this._pc += 2;
@@ -581,6 +591,14 @@ export default class Chip8 {
                     }
 
                     this._tela[y][x] ^= 1;
+
+                    if (this._tela[y][x] !== 0) {
+                        this._renderizador.mudarCor(255, 255, 255);
+                    } else {
+                        this._renderizador.mudarCor(57, 50, 71);
+                    }
+
+                    this._renderizador.desenharQuadrado(x * 8, y * 8, 8, 8);
                 }
             }
         }
