@@ -1,8 +1,23 @@
-/**
- * @author Roberto Nazareth Guedes
- */
+// ui.ts
+//
+// Copyright 2019 Roberto Nazareth <nazarethroberto97@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'whatwg-fetch'
+import 'whatwg-fetch';
 
 import Chip8 from './chip8';
 import RenderizadorCanvas from './renderizadorCanvas';
@@ -10,16 +25,6 @@ import RenderizadorWebGL from './renderizadorWebGL';
 import { decodificarPrograma } from './disassembler';
 import { traduzirInput } from './input';
 import IRenderizador from './renderizador';
-
-/** 
- * Remove os elementos filhos de um div 
- * @param div O div a ter os elementos filhos removidos
- */
-function removerFilhos(div: HTMLDivElement): void {
-    while (div.firstChild) {
-        div.removeChild(div.firstChild);
-    }
-}
 
 /** Checa se o número é par */
 function par(num: number): boolean {
@@ -45,7 +50,7 @@ export default class UI {
     private _assembly: {[key: number]: string | undefined};
 
     /** Elemento 'div' que vai conter as instruções em pseudo-assembly */
-    private _divInstrucoes: HTMLDivElement;
+    private divInstrucoes: HTMLDivElement;
 
     /** Elemento 'select' que permite o usuário escolher ROMs */
     private _select: HTMLSelectElement;
@@ -70,7 +75,7 @@ export default class UI {
 
     private _renderizador: IRenderizador;
 
-    public constructor() {
+    constructor() {
         this._jogoCarregado = false;
         this._arquivoEnviado = false;
         this._dobrarVelocidade = false;
@@ -78,7 +83,7 @@ export default class UI {
         
         const divInstrucoes: HTMLDivElement|null = document.querySelector('div#instrucoes');
         if (divInstrucoes !== null) {
-            this._divInstrucoes = divInstrucoes;
+            this.divInstrucoes = divInstrucoes;
         } else {
             throw new Error('Div de instruções não encontrado');
         }
@@ -117,7 +122,6 @@ export default class UI {
             throw new Error('Erro: elemento input não encontrado');
         }
 
-
         if (RenderizadorWebGL.checarSuporte()) {
             console.log('usando webgl');
             const ctx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -138,15 +142,26 @@ export default class UI {
             this._chip8 = new Chip8(this._renderizador);
         }
 
-
         this.registrarEventos();
+    }
+
+    get jogoCarregando(): boolean {
+        return this._jogoCarregado;
+    }
+
+    get arquivoEnviado(): boolean {
+        return this._arquivoEnviado;
+    }
+
+    get assembly(): {[key: number]: string|undefined} {
+        return this._assembly;
     }
 
     /**
     * Carrega um arquivo na máquina virtual
     * @param arquivo O arquivo
     */
-    public enviarPrograma(arquivo: Blob): void {
+    enviarPrograma(arquivo: Blob): void {
         /** 
          * Usado para não entrar em conflito com 
          * o 'this' da função callback do FileReader
@@ -172,6 +187,16 @@ export default class UI {
     
         if (arquivo instanceof Blob) {
             leitor.readAsArrayBuffer(arquivo);
+        }
+    }
+
+    /** 
+     * Remove os elementos filhos de um div 
+     * @param div O div a ter os elementos filhos removidos
+     */
+    removerFilhos(div: HTMLDivElement): void {
+        while (div.firstChild) {
+            div.removeChild(div.firstChild);
         }
     }
 
@@ -203,7 +228,7 @@ export default class UI {
             }
         }
     
-        removerFilhos(this._divInstrucoes);
+        this.removerFilhos(this.divInstrucoes);
     
         for (let instrucao of instrucoes) {
             let p = document.createElement('p');
@@ -214,7 +239,7 @@ export default class UI {
                 p.classList.add('atual');
             }
     
-            this._divInstrucoes.appendChild(p);
+            this.divInstrucoes.appendChild(p);
         }
     }
 
@@ -315,7 +340,7 @@ export default class UI {
     }
 
     /** Inicia a máquina virtual */
-    public iniciarLoop() {    
+    iniciarLoop() {    
         // executar 10 insturções por frame
         const execPorFrame = 10;
 
@@ -379,17 +404,5 @@ export default class UI {
 
     private eventoStepBtn(e: MouseEvent): void {
         this._chip8.step();
-    }
-
-    get jogoCarregando(): boolean {
-        return this._jogoCarregado;
-    }
-
-    get arquivoEnviado(): boolean {
-        return this._arquivoEnviado;
-    }
-
-    get assembly(): {[key: number]: string|undefined} {
-        return this._assembly;
     }
 }

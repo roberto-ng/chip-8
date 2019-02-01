@@ -1,10 +1,28 @@
+// chip8.ts
+//
+// Copyright 2019 Roberto Nazareth <nazarethroberto97@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import IRenderizador from "./renderizador";
 
 /**
  * @fileoverview Máquina vírtual do CHIP-8
  * @author Roberto Nazareth Guedes
  */
-
 export default class Chip8 {
     private _opcode: number;
     /** Registrador de endereço da memória */
@@ -38,10 +56,10 @@ export default class Chip8 {
     /** Objeto usado para renderizar os dados da tela */
     private _renderizador: IRenderizador;
 
-    public static readonly MEMORIA_TAMANHO = 0x1000;
-    public static readonly FONTE_LARGURA = 5;
+    static readonly MEMORIA_TAMANHO = 0x1000;
+    static readonly FONTE_LARGURA = 5;
 
-    public constructor(render: IRenderizador) {
+    constructor(render: IRenderizador) {
         this._opcode = 0;
         this._sp = 0
         this._pc = 0x200;
@@ -88,8 +106,69 @@ export default class Chip8 {
         this.carregarFonte();
     }
 
+    get i(): number {
+        return this._i;
+    }
+
+    get v(): Uint8Array {
+        return this._v;
+    }
+    
+    get pc(): number {
+        return this._pc;
+    }
+
+    get sp(): number {
+        return this._sp;
+    }
+    
+    get opcode(): number {
+        return this._opcode;
+    }
+    
+    get opcodeHex(): string {
+        const hex = this._opcode.toString(16);
+        return '0x' + hex.toUpperCase();
+    }
+    
+    /** As 3 últimas casas (em hexadecimal) do opcode */
+    get nnn(): number {
+        return this._opcode & 0x0FFF;
+    }
+    
+    /** As 2 últimas casas (em hexadecimal) do opcode */
+    get kk(): number {
+        return this._opcode & 0x00FF;
+    }
+    
+    /** O número na segunda casa (da esquerda pra direita em hexadecimal) do opcode */
+    get x(): number {
+        return (this._opcode & 0x0F00) >> 8;
+    }
+    
+    /** O número na terceira casa (da esquerda pra direita em hexadecimal) do opcode */
+    get y(): number {
+        return (this._opcode & 0x00F0) >> 4;
+    }
+    
+    get desenharFlag(): boolean {
+        return this._desenharFlag;
+    }
+    
+    get tela(): number[][] {
+        return this._tela;
+    }
+    
+    get memoria(): Uint8Array {
+        return this._memoria;
+    }
+        
+    get teclado(): Uint8Array {
+        return this._teclado;
+    }    
+
     /** Reseta o emulador ao seu estado inicial */
-    public resetar(): void {
+    resetar(): void {
         this._opcode = 0;
         this._sp = 0
         this._pc = 0x200;
@@ -130,17 +209,17 @@ export default class Chip8 {
     }
 
     /** Pausa o emulador */
-    public pausar(): void {
+    pausar(): void {
         this._pausado = true;
     }
 
     /** Dá play no emulador */
-    public play(): void {
+    play(): void {
         this._pausado = false;
         this._step = false;
     }
 
-    public step(): void {
+    step(): void {
         if (this._pausado) {
             this._step = true;
         }
@@ -150,7 +229,7 @@ export default class Chip8 {
      * Carrega um programa na memória
      * @param buffer Programa a ser carregado na memória
      */
-    public carregarPrograma(buffer: Uint8Array): void {
+    carregarPrograma(buffer: Uint8Array): void {
         buffer.forEach((byte, i) => {
             const pos = i + 0x200;
 
@@ -161,7 +240,7 @@ export default class Chip8 {
     }
 
     /** Emula um ciclo da CPU */
-    public emularCiclo(): void {
+    emularCiclo(): void {
         this.buscarOpcode();
 
         if (this._pausado) {
@@ -733,68 +812,13 @@ export default class Chip8 {
     }
 
     /** Registra que uma tecla foi apertada */
-    public teclaBaixo(tecla: number): void {
+    teclaBaixo(tecla: number): void {
         this._teclado[tecla] = 1;
         this._ultimaTecla = tecla;
     }
 
     /** Registra que uma tecla foi solta */
-    public teclaCima(tecla: number): void {
+    teclaCima(tecla: number): void {
         this._teclado[tecla] = 0;
-    }
-
-    /** Os registradores da CPU */
-    public get v(): Uint8Array {
-        return this._v;
-    }
-
-    /** Contador de programa */
-    public get pc(): number {
-        return this._pc;
-    }
-
-    public get opcode(): number {
-        return this._opcode;
-    }
-
-    public get opcodeHex(): string {
-        const hex = this._opcode.toString(16);
-        return '0x' + hex.toUpperCase();
-    }
-
-    /** As 3 últimas casas (em hexadecimal) do opcode */
-    public get nnn(): number {
-        return this._opcode & 0x0FFF;
-    }
-
-    /** As 2 últimas casas (em hexadecimal) do opcode */
-    public get kk(): number {
-        return this._opcode & 0x00FF;
-    }
-
-    /** O número na segunda casa (da esquerda pra direita em hexadecimal) do opcode */
-    public get x(): number {
-        return (this._opcode & 0x0F00) >> 8;
-    }
-
-    /** O número na terceira casa (da esquerda pra direita em hexadecimal) do opcode */
-    public get y(): number {
-        return (this._opcode & 0x00F0) >> 4;
-    }
-
-    public get desenharFlag(): boolean {
-        return this._desenharFlag;
-    }
-
-    public get tela(): number[][] {
-        return this._tela;
-    }
-
-    public get memoria(): Uint8Array {
-        return this._memoria;
-    }
-
-    public get teclado(): Uint8Array {
-        return this._teclado;
     }
 }
