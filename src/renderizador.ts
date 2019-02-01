@@ -7,6 +7,7 @@
 export default interface IRenderizador {
     mudarCor(r: number, g: number, b: number): void;
     desenharQuadrado(x: number, y: number, l: number, a: number): void;
+    desenharTela(tela: number[][]): void;
     limparTela(): void;
     encerrarFrame(): void;
 }

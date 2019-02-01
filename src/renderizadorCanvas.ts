@@ -4,7 +4,7 @@
  * @author Roberto Nazareth Guedes
  */
 
-import IRenderizador from './renderizador';
+import IRenderizador, { renderizar } from './renderizador';
 
 export default class RenderizadorCanvas implements IRenderizador {
     private _ctx: CanvasRenderingContext2D;
@@ -24,6 +24,10 @@ export default class RenderizadorCanvas implements IRenderizador {
 
     public desenharQuadrado(x: number, y: number, l: number, a: number): void {
         this._ctx.fillRect(x, y, l, a);
+    }
+
+    public desenharTela(tela: number[][]): void {
+        renderizar(this, tela);
     }
 
     public limparTela(): void {

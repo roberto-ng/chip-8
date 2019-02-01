@@ -68,6 +68,8 @@ export default class Emulador {
     /** Dobra a quantidade de instruções executadas por frame */
     private _dobrarVelocidade: boolean;
 
+    private _renderizador: IRenderizador;
+
     public constructor() {
         this._jogoCarregado = false;
         this._arquivoEnviado = false;
@@ -85,13 +87,6 @@ export default class Emulador {
         if (canvas === null) {
             throw new Error('Erro ao buscar canvas');
         }
-
-        const ctx = canvas.getContext('2d');
-        if (ctx === null) {
-            throw new Error('Erro ao buscar contexto do canvas');
-        }
-
-        const renderizador = new RenderizadorCanvas(ctx);
     
         const select: HTMLSelectElement|null = document.querySelector('select#rom-select');
         if (select !== null) {
@@ -122,7 +117,27 @@ export default class Emulador {
             throw new Error('Erro: elemento input não encontrado');
         }
 
-        this._chip8 = new Chip8(renderizador);
+
+        if (RenderizadorWebGL.checarSuporte()) {
+            console.log('usando webgl');
+            const ctx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (ctx === null) {
+                throw new Error('Erro ao buscar contexto do canvas');
+            }
+
+            this._renderizador = new RenderizadorWebGL(ctx);
+            this._chip8 = new Chip8(this._renderizador);
+        } else {
+            console.log('usando canvas2d');
+            const ctx = canvas.getContext('2d');
+            if (ctx === null) {
+                throw new Error('Erro ao buscar contexto do canvas');
+            }
+
+            this._renderizador = new RenderizadorCanvas(ctx);
+            this._chip8 = new Chip8(this._renderizador);
+        }
+
 
         this.registrarEventos();
     }
@@ -317,6 +332,8 @@ export default class Emulador {
                     this.renderizarAssembly();
                     this._chip8.emularCiclo();
                 }
+
+                this._renderizador.desenharTela(this._chip8.tela);
             }
     
             window.requestAnimationFrame(atualizar);

@@ -6,14 +6,22 @@
 
 import IRenderizador from './renderizador';
 
+const flat = arrays => arrays.reduce((a, b) => a.concat(b), []);
+
 export default class RenderizadorWebGL implements IRenderizador {
     private _gl: WebGLRenderingContext;
     private _largura: number;
     private _altura: number;
-    private _programa: WebGLProgram;
-    private _u_corLocal: WebGLUniformLocation;
-    private _u_resolucao: WebGLUniformLocation;
-    private _a_posicao: GLint;
+    private _shader: WebGLProgram;
+    private _cor: number[];
+    private _texCoords: number[];
+    private _coordBuffer: WebGLBuffer;
+    private _posicaoBuffer: WebGLBuffer;
+    private _indicesBuffer: WebGLBuffer;
+    private u_sampler: WebGLUniformLocation;
+    private a_textCoord: number;
+    private a_posicao;
+    private textura: WebGLTexture;
 
     public readonly PIXEL_TAMANHO: number = 8;
     
@@ -21,40 +29,99 @@ export default class RenderizadorWebGL implements IRenderizador {
         this._gl = gl;
         this._largura = this.PIXEL_TAMANHO * 64;
         this._altura = this.PIXEL_TAMANHO * 32;
-        this._programa = this.compilarPrograma();
+        this._cor = new Array(4);
+        this._shader = this.compilarShaderUsarTextura();
 
-        this._gl.useProgram(this._programa);
+        this._texCoords = [
+            0.0, 0.0,    0.0,  0.0,
+            1.0, 0.0,   64.0,  0.0,
+            1.0, 1.0,   64.0, 32.0,
+            0.0, 1.0,    0.0, 32.0, 
+        ];
 
-        const u_corLocal = this._gl.getUniformLocation(this._programa, 'u_cor');
-        if (u_corLocal === null) {
-            throw new Error('Erro ao buscar uniforme');
+        const posicao = [
+            -1.0,  1.0,
+            -1.0, -1.0,
+             1.0,  1.0,
+             1.0, -1.0
+        ];
+
+        var indices = [
+            0, 2, 3,
+            0, 3, 1
+        ];
+
+        const textureCoordBuffer = this._gl.createBuffer();
+        if (textureCoordBuffer === null) {
+            throw new Error('Erro ao criar textureCoordBuffer');
         }
-        this._u_corLocal = u_corLocal;
+        this._coordBuffer = textureCoordBuffer;
 
-        const u_resolucao = this._gl.getUniformLocation(this._programa, 'u_resolucao');
-        if (u_resolucao === null) {
-            throw new Error('Erro ao buscar uniforme');
+        const posicaoBuffer = this._gl.createBuffer();
+        if (posicaoBuffer === null) {
+            throw new Error('Erro ao criar posicaoBuffer');
         }
-        this._u_resolucao = u_resolucao;
-        gl.uniform2f(this._u_resolucao, gl.canvas.width, gl.canvas.height);
+        this._posicaoBuffer = posicaoBuffer;
 
-        this._a_posicao = this._gl.getAttribLocation(this._programa, 'a_posicao');
-        this._gl.enableVertexAttribArray(this._a_posicao);
+        const indicesBuffer = this._gl.createBuffer();
+        if (indicesBuffer === null) {
+            throw new Error('Erro ao criar indicesBuffer');
+        }
+        this._indicesBuffer = indicesBuffer;
 
-        gl.viewport(0, 0, this._gl.canvas.width, this._gl.canvas.height);
-        gl.clearColor(0, 0, 0, 0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._coordBuffer);
+        this._gl.bufferData(
+            this._gl.ARRAY_BUFFER, 
+            new Float32Array(this._texCoords),
+            this._gl.STATIC_DRAW
+        );
+
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, posicaoBuffer);
+        this._gl.bufferData(
+            this._gl.ARRAY_BUFFER, 
+            new Float32Array(posicao),
+            this._gl.STATIC_DRAW
+        );
+
+        this._gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._indicesBuffer);
+        this._gl.bufferData(
+            gl.ELEMENT_ARRAY_BUFFER, 
+            new Uint16Array(indices), 
+            gl.STATIC_DRAW
+        );
+
+        this.a_textCoord = gl.getAttribLocation(this._shader, 'a_textureCoord');
+        this.a_posicao = gl.getAttribLocation(this._shader, 'a_posicao');
         
-        const bufferPosicao = this._gl.createBuffer();
-        if (bufferPosicao === null) {
-            throw new Error('Erro ao criar buffer');
+        const u_sampler = gl.getUniformLocation(this._shader, 'u_sampler');
+        if (u_sampler === null) { throw new Error('erro ao achar u_sampler'); }
+        this.u_sampler = u_sampler;
+
+        const textura = this._gl.createTexture();
+        if (textura === null) {
+            throw new Error('Erro ao criar textura');
         }
-        this._gl.bindBuffer(gl.ARRAY_BUFFER, bufferPosicao);
-        this._gl.vertexAttribPointer(this._a_posicao, 2, gl.FLOAT, false, 0, 0);
+        this.textura = textura;
+
+        this._gl.viewport(0, 0, this._gl.canvas.width, this._gl.canvas.height);
+        this.limparTela();
+    }
+
+    public static checarSuporte(): boolean {
+        try {
+             const canvas = document.createElement('canvas'); 
+            //@ts-ignore
+            return !!window.WebGLRenderingContext &&
+               canvas.getContext('webgl') !== null && 
+               canvas.getContext('experimental-webgl') !== null;
+        } catch(e) {
+            return false;
+        }
     }
 
     public mudarCor(r: number, g: number, b: number): void {
-        this._gl.uniform4fv(this._u_corLocal, [r/255.0, g/255.0, b/255.0, 1.0]);
+        this._cor = [r/255.0, g/255.0, b/255.0, 1.0];
+        //this._gl.uniform4fv(this._u_corLocal, [r/255.0, g/255.0, b/255.0, 1.0]);
     }
 
     public limparTela(): void {
@@ -63,66 +130,117 @@ export default class RenderizadorWebGL implements IRenderizador {
     }
 
     public desenharQuadrado(x: number, y: number, l: number, a: number): void {
-        const x1 = x;
-        const x2 = x + this._largura;
-        const y1 = y;
-        const y2 = y + this._altura;
-      
-        const verticies = new Float32Array([
-            x1, y1,
-            x2, y1,
-            x1, y2,
-            x1, y2,
-            x2, y1,
-            x2, y2,
-        ]);
-      
-        this._gl.bufferData(this._gl.ARRAY_BUFFER, verticies, this._gl.DYNAMIC_DRAW);
-        this._gl.drawArrays(this._gl.TRIANGLES, 0, 6);
+    }
+    
+    public encerrarFrame(): void {
     }
 
-    public encerrarFrame(): void {
+    public desenharTela(tela: number[][]): void {
+        this._gl.useProgram(this._shader);
+
+        //this._gl.pixelStorei(this._gl.UNPACK_ALIGNMENT, 1);
+        this._gl.bindTexture(this._gl.TEXTURE_2D, this.textura);
+
+        this._gl.texImage2D(this._gl.TEXTURE_2D, 0, this._gl.RGBA, this._largura, this._altura, 
+            0, this._gl.RGBA, this._gl.UNSIGNED_BYTE, this.criarTextura(tela));
+
+        this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MAG_FILTER, this._gl.NEAREST);
+        this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MIN_FILTER, this._gl.NEAREST);
+        this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_WRAP_S, this._gl.CLAMP_TO_EDGE);
+        this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_WRAP_T, this._gl.CLAMP_TO_EDGE);
+        
+        this._gl.enableVertexAttribArray(this.a_textCoord);
+        this._gl.enableVertexAttribArray(this.a_posicao);
+    
+
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._coordBuffer);
+        this._gl.vertexAttribPointer(this.a_textCoord, 2, this._gl.FLOAT, false, 0, 0);
+
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._posicaoBuffer);
+        this._gl.vertexAttribPointer(this.a_posicao, 2, this._gl.FLOAT, false, 0, 0);        
+
+        this._gl.activeTexture(this._gl.TEXTURE0);
+        this._gl.uniform1i(this.u_sampler, 0);
+        this._gl.bindTexture(this._gl.TEXTURE_2D, this.textura);
+
+        this._gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+        this._gl.clearDepth(1.0);                 // Clear everything
+        this._gl.enable(this._gl.DEPTH_TEST);           // Enable depth testing
+        this._gl.depthFunc(this._gl.LEQUAL); // Near things obscure far things
+
+        // limpa o canvas
+        //this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
+
+        this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, this._indicesBuffer);
+        this._gl.drawElements(this._gl.TRIANGLES, 6, this._gl.UNSIGNED_SHORT, 0);
+    }
+
+    private criarTextura(tela: number[][]): Uint8Array {
+        let tamanho = (this._largura * this._altura) * 4;
+        let textura = new Uint8Array(tamanho);
+
+        let count = 0;
+        for (let x = 0; x < 64; ++x) {
+            for (let y = 0; y < 32; ++y) {
+                let cor = [1, 1, 1, 1];
+                const pixel = tela[y][x];
+                if (pixel === 0) {
+                    cor = [57.0, 50.0, 71.0, 1.0];
+                }
+
+                cor.forEach((valor) => {
+                    textura[count] = valor;
+                    count++;
+                });
+                //textura[y][x] = cor;
+            }
+        }
+
+        return textura;
+    }
+
+    private compilarShaderUsarTextura(): WebGLProgram {
+        const v_source = `
+        precision highp float;
+
+        attribute vec2 a_textureCoord;
+        attribute vec2 a_posicao;
+
+        varying vec2 v_textureCoord;
+        
+        void main() {
+           gl_Position = vec4(a_posicao, 0.0, 1.0);
+           v_textureCoord = a_textureCoord;
+        }
+        `;
+
+        const f_source = `
+        precision highp float;
+
+        varying vec2 v_textureCoord;
+
+        uniform sampler2D u_sampler;
+
+        void main() {
+            gl_FragColor = texture2D(u_sampler, v_textureCoord);
+        }
+        `;
+
+        return this.compilarPrograma(v_source, f_source);
     }
 
     /** Compila o programa que irá rodar na placa de video e que
      * será usado para desenhar os quadrados
      * @returns O programa já compilado
      */
-    private compilarPrograma(): WebGLProgram {
-        const vertexShaderSource = `
-        attribute vec2 a_posicao;
-        uniform vec2 u_resolucao;
-        
-        void main() {
-           // converte os pixels para um número entre 0.0 e 1.0
-           vec2 zeroParaUm = a_posicao / u_resolucao;
-           // converte de 0->1 para 0->2
-           vec2 zeroParaDois = zeroParaUm * 2.0;
-           // converte de 0->2 para -1->+1 (clipspace)
-           vec2 clipSpace = zeroParaDois - 1.0;
-        
-           gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-        }
-        `;
-        
-        const fragmentShaderSource = `
-        #ifdef GL_ES
-        precision highp float;
-        #endif
-        
-        uniform vec4 u_cor;
-        
-        void main() {
-          gl_FragColor = u_cor;
-        }
-        `;
+    private compilarPrograma(vSource: string, fSource: string): WebGLProgram {
         
         const vertexShader = this._gl.createShader(this._gl.VERTEX_SHADER);
         if (vertexShader === null) {
             throw new Error('Erro ao criar shader');
         }
 
-        this._gl.shaderSource(vertexShader, vertexShaderSource);
+        this._gl.shaderSource(vertexShader, vSource);
         this._gl.compileShader(vertexShader);
 
         // checa erros de compilação
@@ -139,7 +257,7 @@ export default class RenderizadorWebGL implements IRenderizador {
             throw new Error('Erro ao criar shader');
         }
         
-        this._gl.shaderSource(fragmentShader, fragmentShaderSource);
+        this._gl.shaderSource(fragmentShader, fSource);
         this._gl.compileShader(fragmentShader);
 
         // checa erros de compilação

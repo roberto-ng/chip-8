@@ -35,7 +35,7 @@ export default class Chip8 {
     private _pausado: boolean;
     /** Se a máquina virtual deve executar uma instrução quando pausado */
     private _step: boolean;
-
+    /** Objeto usado para renderizar os dados da tela */
     private _renderizador: IRenderizador;
 
     public static readonly MEMORIA_TAMANHO = 0x1000;
@@ -241,6 +241,37 @@ export default class Chip8 {
         const primeiro = this._memoria[this._pc];
         const segundo = this._memoria[this._pc+1];
         this._opcode = (primeiro << 8) | segundo;
+    }
+
+    private setPixel(pos_x: number, pos_y: number, fim_sprite: number): number {
+        let colisao = 0;
+        const sprite = this._memoria.slice(this._i, fim_sprite+1);
+
+        for (let i = 0; i < sprite.length-1; ++i) {
+            for (let j = 0; j < 8; ++j) {
+                const x = (pos_x + j) % 64;
+                const y = (pos_y + i) % 32;
+
+                if ((sprite[i] & (0x80 >> j)) !== 0) {
+                    if (this._tela[y][x] === 1) {
+                        colisao = 1;
+                    }
+
+                    this._tela[y][x] ^= 1;
+
+                    if (this._tela[y][x] !== 0) {
+                        this._renderizador.mudarCor(255, 255, 255);
+                    } else {
+                        this._renderizador.mudarCor(57, 50, 71);
+                    }
+
+                    //this._renderizador.desenharQuadrado(x * 8, y * 8, 8, 8);
+                }
+            }
+        }
+
+        this._desenharFlag = true;
+        return colisao;
     }
 
     /** Identifica e executa o opcode */
@@ -574,37 +605,6 @@ export default class Chip8 {
     private op_cxkk_rnd(): void {
         this._v[this.x] = (Math.random() * 0x100) & this.kk;
         this._pc += 2;
-    }
-
-    private setPixel(pos_x: number, pos_y: number, fim_sprite: number): number {
-        let colisao = 0;
-        const sprite = this._memoria.slice(this._i, fim_sprite+1);
-
-        for (let i = 0; i < sprite.length-1; ++i) {
-            for (let j = 0; j < 8; ++j) {
-                const x = (pos_x + j) % 64;
-                const y = (pos_y + i) % 32;
-
-                if ((sprite[i] & (0x80 >> j)) !== 0) {
-                    if (this._tela[y][x] === 1) {
-                        colisao = 1;
-                    }
-
-                    this._tela[y][x] ^= 1;
-
-                    if (this._tela[y][x] !== 0) {
-                        this._renderizador.mudarCor(255, 255, 255);
-                    } else {
-                        this._renderizador.mudarCor(57, 50, 71);
-                    }
-
-                    this._renderizador.desenharQuadrado(x * 8, y * 8, 8, 8);
-                }
-            }
-        }
-
-        this._desenharFlag = true;
-        return colisao;
     }
 
     /**
