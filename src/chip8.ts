@@ -1,4 +1,4 @@
-import IRenderizador, { renderizar } from "./renderizador";
+import IRenderizador from "./renderizador";
 
 /**
  * @fileoverview Máquina vírtual do CHIP-8
@@ -126,7 +126,7 @@ export default class Chip8 {
         }
 
         this.carregarFonte();
-        renderizar(this._renderizador, this._tela);
+        this._renderizador.desenharTela(this._tela);
     }
 
     /** Pausa o emulador */
@@ -258,14 +258,6 @@ export default class Chip8 {
                     }
 
                     this._tela[y][x] ^= 1;
-
-                    if (this._tela[y][x] !== 0) {
-                        this._renderizador.mudarCor(255, 255, 255);
-                    } else {
-                        this._renderizador.mudarCor(57, 50, 71);
-                    }
-
-                    //this._renderizador.desenharQuadrado(x * 8, y * 8, 8, 8);
                 }
             }
         }
@@ -374,7 +366,7 @@ export default class Chip8 {
         }
 
         this._renderizador.limparTela();
-        renderizar(this._renderizador, this._tela);
+        this._renderizador.desenharTela(this._tela);
 
         this._desenharFlag = true;
         this._pc += 2;

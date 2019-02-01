@@ -4,34 +4,48 @@
  * @author Roberto Nazareth Guedes
  */
 
-import IRenderizador, { renderizar } from './renderizador';
+import IRenderizador from './renderizador';
 
 export default class RenderizadorCanvas implements IRenderizador {
-    private _ctx: CanvasRenderingContext2D;
-    private _largura: number;
-    private _altura: number;
+    private ctx: CanvasRenderingContext2D;
+
     public readonly PIXEL_TAMANHO: number = 8;
+    public readonly LARGURA: number = 8 * 64;
+    public readonly ALTURA: number = 8 * 32;
     
     public constructor(ctx: CanvasRenderingContext2D) {
-        this._ctx = ctx;
-        this._largura = this.PIXEL_TAMANHO * 64;
-        this._altura = this.PIXEL_TAMANHO * 32;
+        this.ctx = ctx;
     }
 
     public mudarCor(r: number, g: number, b: number): void {
-        this._ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     }
 
     public desenharQuadrado(x: number, y: number, l: number, a: number): void {
-        this._ctx.fillRect(x, y, l, a);
+        this.ctx.fillRect(x, y, l, a);
     }
 
     public desenharTela(tela: number[][]): void {
-        renderizar(this, tela);
+        this.limparTela();
+        
+        for (let y = 0; y < 32; ++y) {
+            for (let x = 0; x < 64; ++x) {
+                const pixel = tela[y][x];
+        
+                if (pixel !== 0) {
+                    this.mudarCor(255, 255, 255);
+                } else {
+                    this.mudarCor(57, 50, 71);
+                }
+        
+                const tam = this.PIXEL_TAMANHO;
+                this.desenharQuadrado(x * tam, y * tam, tam, tam);
+            }
+        }
     }
 
     public limparTela(): void {
-        this._ctx.clearRect(0, 0, this._largura, this._altura);
+        this.ctx.clearRect(0, 0, this.LARGURA, this.ALTURA);
     }
 
     public encerrarFrame(): void {

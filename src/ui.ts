@@ -9,7 +9,7 @@ import RenderizadorCanvas from './renderizadorCanvas';
 import RenderizadorWebGL from './renderizadorWebGL';
 import { decodificarPrograma } from './disassembler';
 import { traduzirInput } from './input';
-import IRenderizador, { renderizar } from './renderizador';
+import IRenderizador from './renderizador';
 
 /** 
  * Remove os elementos filhos de um div 

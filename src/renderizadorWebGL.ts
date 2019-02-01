@@ -161,22 +161,11 @@ export default class RenderizadorWebGL implements IRenderizador {
         }
     }
 
-    public mudarCor(r: number, g: number, b: number): void {
-        //this._cor = [r/255.0, g/255.0, b/255.0, 1.0];
-        //this._gl.uniform4fv(this._u_corLocal, [r/255.0, g/255.0, b/255.0, 1.0]);
-    }
-
     public limparTela(): void {
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
-
-    public desenharQuadrado(x: number, y: number, l: number, a: number): void {
-    }
     
-    public encerrarFrame(): void {
-    }
-
     /** Cria e renderiza uma textura baseada no buffer da tela */
     public desenharTela(tela: number[][]): void {
         this.gl.useProgram(this.shader);
