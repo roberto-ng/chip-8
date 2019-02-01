@@ -29,7 +29,7 @@ function par(num: number): boolean {
 /**
 * Abstrai as interações da máquina virtual com o HTML
 */
-export default class Emulador {
+export default class UI {
     /** Instancia da máquina virtual */
     private _chip8: Chip8;
 

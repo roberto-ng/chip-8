@@ -2,12 +2,12 @@
  * @author Roberto Nazareth Guedes
  */
 
-import Emulador from './emulador';
+import UI from './ui';
 
 function main(): void {
     try {
-        const emulador = new Emulador();
-        emulador.iniciarLoop();
+        const ui = new UI();
+        ui.iniciarLoop();
     } catch (e) {
         window.alert(e);
         console.error(e);
