@@ -201,7 +201,7 @@ export default class RenderizadorWebGL implements IRenderizador {
 
     private compilarShaderUsarTextura(): WebGLProgram {
         const v_source = `
-            precision highp float;
+            precision mediump float;
             
             attribute vec3 a_pos;
             attribute vec2 a_tex_coord;
@@ -214,7 +214,7 @@ export default class RenderizadorWebGL implements IRenderizador {
         `;
 
         const f_source = `
-            precision highp float;
+            precision mediump float;
 
             uniform sampler2D u_sampler;
             varying vec2 v_tex_coord;
