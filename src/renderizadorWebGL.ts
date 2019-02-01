@@ -6,14 +6,11 @@
 
 import IRenderizador from './renderizador';
 
-const flat = arrays => arrays.reduce((a, b) => a.concat(b), []);
-
 export default class RenderizadorWebGL implements IRenderizador {
     private _gl: WebGLRenderingContext;
     private _largura: number;
     private _altura: number;
     private _shader: WebGLProgram;
-    private _cor: number[];
     private _texCoords: number[];
     private _coordBuffer: WebGLBuffer;
     private _posicaoBuffer: WebGLBuffer;
@@ -26,29 +23,30 @@ export default class RenderizadorWebGL implements IRenderizador {
     public readonly PIXEL_TAMANHO: number = 8;
     
     public constructor(gl: WebGLRenderingContext) {
+        console.log('usando webgl');
         this._gl = gl;
         this._largura = this.PIXEL_TAMANHO * 64;
         this._altura = this.PIXEL_TAMANHO * 32;
-        this._cor = new Array(4);
+        //this._cor = new Array(4);
         this._shader = this.compilarShaderUsarTextura();
 
         this._texCoords = [
-            0.0, 0.0,    0.0,  0.0,
-            1.0, 0.0,   64.0,  0.0,
-            1.0, 1.0,   64.0, 32.0,
-            0.0, 1.0,    0.0, 32.0, 
+            1.0, 1.0, // cima direita
+            1.0, 0.0, // baixo direita
+            0.0, 0.0, // baixo esquerda
+            0.0, 1.0, // cima esquerda
         ];
 
         const posicao = [
-            -1.0,  1.0,
-            -1.0, -1.0,
-             1.0,  1.0,
-             1.0, -1.0
-        ];
+            1.0,  1.0, 0.0,
+            1.0, -1.0, 0.0,
+           -1.0, -1.0, 0.0,
+           -1.0,  1.0, 0.0,
+       ];
 
         var indices = [
-            0, 2, 3,
-            0, 3, 1
+            0, 1, 3, // primeiro triangulo
+            1, 2, 3, // segundo triangulo
         ];
 
         const textureCoordBuffer = this._gl.createBuffer();
@@ -68,18 +66,18 @@ export default class RenderizadorWebGL implements IRenderizador {
             throw new Error('Erro ao criar indicesBuffer');
         }
         this._indicesBuffer = indicesBuffer;
+        
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._posicaoBuffer);
+        this._gl.bufferData(
+            this._gl.ARRAY_BUFFER, 
+            new Float32Array(posicao),
+            this._gl.STATIC_DRAW
+        );
 
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._coordBuffer);
         this._gl.bufferData(
             this._gl.ARRAY_BUFFER, 
             new Float32Array(this._texCoords),
-            this._gl.STATIC_DRAW
-        );
-
-        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, posicaoBuffer);
-        this._gl.bufferData(
-            this._gl.ARRAY_BUFFER, 
-            new Float32Array(posicao),
             this._gl.STATIC_DRAW
         );
 
@@ -90,8 +88,8 @@ export default class RenderizadorWebGL implements IRenderizador {
             gl.STATIC_DRAW
         );
 
-        this.a_textCoord = gl.getAttribLocation(this._shader, 'a_textureCoord');
-        this.a_posicao = gl.getAttribLocation(this._shader, 'a_posicao');
+        this.a_textCoord = gl.getAttribLocation(this._shader, 'a_tex_coord');
+        this.a_posicao = gl.getAttribLocation(this._shader, 'a_pos');
         
         const u_sampler = gl.getUniformLocation(this._shader, 'u_sampler');
         if (u_sampler === null) { throw new Error('erro ao achar u_sampler'); }
@@ -120,7 +118,7 @@ export default class RenderizadorWebGL implements IRenderizador {
     }
 
     public mudarCor(r: number, g: number, b: number): void {
-        this._cor = [r/255.0, g/255.0, b/255.0, 1.0];
+        //this._cor = [r/255.0, g/255.0, b/255.0, 1.0];
         //this._gl.uniform4fv(this._u_corLocal, [r/255.0, g/255.0, b/255.0, 1.0]);
     }
 
@@ -137,11 +135,11 @@ export default class RenderizadorWebGL implements IRenderizador {
 
     public desenharTela(tela: number[][]): void {
         this._gl.useProgram(this._shader);
-
-        //this._gl.pixelStorei(this._gl.UNPACK_ALIGNMENT, 1);
+        
         this._gl.bindTexture(this._gl.TEXTURE_2D, this.textura);
-
-        this._gl.texImage2D(this._gl.TEXTURE_2D, 0, this._gl.RGBA, this._largura, this._altura, 
+        
+        //this._gl.pixelStorei(this._gl.UNPACK_ALIGNMENT, 1);
+        this._gl.texImage2D(this._gl.TEXTURE_2D, 0, this._gl.RGBA, 64, 32, 
             0, this._gl.RGBA, this._gl.UNSIGNED_BYTE, this.criarTextura(tela));
 
         this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MAG_FILTER, this._gl.NEAREST);
@@ -151,22 +149,21 @@ export default class RenderizadorWebGL implements IRenderizador {
         
         this._gl.enableVertexAttribArray(this.a_textCoord);
         this._gl.enableVertexAttribArray(this.a_posicao);
-    
 
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._coordBuffer);
         this._gl.vertexAttribPointer(this.a_textCoord, 2, this._gl.FLOAT, false, 0, 0);
 
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._posicaoBuffer);
-        this._gl.vertexAttribPointer(this.a_posicao, 2, this._gl.FLOAT, false, 0, 0);        
+        this._gl.vertexAttribPointer(this.a_posicao, 3, this._gl.FLOAT, false, 0, 0);        
 
         this._gl.activeTexture(this._gl.TEXTURE0);
         this._gl.uniform1i(this.u_sampler, 0);
         this._gl.bindTexture(this._gl.TEXTURE_2D, this.textura);
 
-        this._gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
-        this._gl.clearDepth(1.0);                 // Clear everything
-        this._gl.enable(this._gl.DEPTH_TEST);           // Enable depth testing
-        this._gl.depthFunc(this._gl.LEQUAL); // Near things obscure far things
+        this._gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        this._gl.clearDepth(1.0);
+        this._gl.enable(this._gl.DEPTH_TEST);
+        this._gl.depthFunc(this._gl.LEQUAL);
 
         // limpa o canvas
         //this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
@@ -176,54 +173,55 @@ export default class RenderizadorWebGL implements IRenderizador {
     }
 
     private criarTextura(tela: number[][]): Uint8Array {
-        let tamanho = (this._largura * this._altura) * 4;
-        let textura = new Uint8Array(tamanho);
+        let textura: number[] = [];
+        let pixels: number[][] = [];
 
         let count = 0;
-        for (let x = 0; x < 64; ++x) {
-            for (let y = 0; y < 32; ++y) {
-                let cor = [1, 1, 1, 1];
+        for (let y = 31; y >= 0; --y) {
+            for (let x = 0; x < 64; ++x) {
+                // cor branca
+                let cor = [255, 255, 255, 255];
                 const pixel = tela[y][x];
                 if (pixel === 0) {
-                    cor = [57.0, 50.0, 71.0, 1.0];
+                    cor = [57, 50, 71, 255];
                 }
-
-                cor.forEach((valor) => {
-                    textura[count] = valor;
-                    count++;
-                });
-                //textura[y][x] = cor;
+        
+               pixels.push(cor);
             }
         }
 
-        return textura;
+        for (let pixel of pixels) {
+            for (let valor of pixel) {
+                textura.push(valor);
+            }
+        }
+
+        return new Uint8Array(textura);
     }
 
     private compilarShaderUsarTextura(): WebGLProgram {
         const v_source = `
-        precision highp float;
+            precision highp float;
+            
+            attribute vec3 a_pos;
+            attribute vec2 a_tex_coord;
+            varying vec2 v_tex_coord;
 
-        attribute vec2 a_textureCoord;
-        attribute vec2 a_posicao;
-
-        varying vec2 v_textureCoord;
-        
-        void main() {
-           gl_Position = vec4(a_posicao, 0.0, 1.0);
-           v_textureCoord = a_textureCoord;
-        }
+            void main() {
+                gl_Position = vec4(a_pos, 1.0);
+                v_tex_coord = a_tex_coord;
+            }
         `;
 
         const f_source = `
-        precision highp float;
+            precision highp float;
 
-        varying vec2 v_textureCoord;
+            uniform sampler2D u_sampler;
+            varying vec2 v_tex_coord;
 
-        uniform sampler2D u_sampler;
-
-        void main() {
-            gl_FragColor = texture2D(u_sampler, v_textureCoord);
-        }
+            void main() {
+                gl_FragColor = texture2D(u_sampler, v_tex_coord);
+            }
         `;
 
         return this.compilarPrograma(v_source, f_source);
@@ -234,7 +232,6 @@ export default class RenderizadorWebGL implements IRenderizador {
      * @returns O programa já compilado
      */
     private compilarPrograma(vSource: string, fSource: string): WebGLProgram {
-        
         const vertexShader = this._gl.createShader(this._gl.VERTEX_SHADER);
         if (vertexShader === null) {
             throw new Error('Erro ao criar shader');
