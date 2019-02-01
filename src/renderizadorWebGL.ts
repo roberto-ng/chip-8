@@ -9,22 +9,29 @@ import IRenderizador from './renderizador';
 export default class RenderizadorWebGL implements IRenderizador {
     private gl: WebGLRenderingContext;
     private shader: WebGLProgram;
-    private tex_coords: number[];
-    private coord_buffer: WebGLBuffer;
-    private pos_buffer: WebGLBuffer;
-    private indices_buffer: WebGLBuffer;
-    private u_textura: WebGLUniformLocation;
-    private a_tex_coord: number;
-    private a_posicao;
     private textura: WebGLTexture;
+    private buffers: {
+        tex_coord: WebGLBuffer;
+        posicao: WebGLBuffer;
+        indices: WebGLBuffer;
+    };
+    private atributos: {
+        tex_coord: number;
+        posicao: number;
+    };
+    private uniformes: {
+        textura: WebGLUniformLocation
+    };
 
     public readonly PIXEL_TAMANHO: number = 8;
     public readonly LARGURA: number = 64;
     public readonly ALTURA: number = 32;
     
+    
     public constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
 
+        // definição do código fonte do shader
         const v_source = `
             precision mediump float;
             
@@ -49,15 +56,21 @@ export default class RenderizadorWebGL implements IRenderizador {
             }
         `;
 
+        // compila o shader
         this.shader = this.compilarShader(v_source, f_source);
 
-        this.tex_coords = [
+
+        // definição dos dados que vão ser usados nos buffers da GPU
+
+        // coordenadas da textura, de 0 à 1
+        const tex_coords = [
             1.0, 1.0, // cima direita
             1.0, 0.0, // baixo direita
             0.0, 0.0, // baixo esquerda
             0.0, 1.0, // cima esquerda
         ];
 
+        // posição dos vértices
         const posicao = [
             1.0,  1.0, 0.0,
             1.0, -1.0, 0.0,
@@ -65,56 +78,65 @@ export default class RenderizadorWebGL implements IRenderizador {
            -1.0,  1.0, 0.0,
        ];
 
+       // os indices do retangulo, que é formado por 2 triangulos
         var indices = [
             0, 1, 3, // primeiro triangulo
             1, 2, 3, // segundo triangulo
         ];
 
-        const textureCoordBuffer = this.gl.createBuffer();
-        if (textureCoordBuffer === null) {
-            throw new Error('Erro ao criar textureCoordBuffer');
+        // criação dos buffers na GPU
+        const tex_coord_buf = this.gl.createBuffer();
+        const posicao_buf = this.gl.createBuffer();
+        const indices_buf = this.gl.createBuffer();
+        if (tex_coord_buf === null) {
+            throw new Error('Erro ao criar tex_coord_buf');
         }
-        this.coord_buffer = textureCoordBuffer;
-
-        const posicaoBuffer = this.gl.createBuffer();
-        if (posicaoBuffer === null) {
+        else if (posicao_buf === null) {
             throw new Error('Erro ao criar posicaoBuffer');
         }
-        this.pos_buffer = posicaoBuffer;
-
-        const indicesBuffer = this.gl.createBuffer();
-        if (indicesBuffer === null) {
+        else if (indices_buf === null) {
             throw new Error('Erro ao criar indicesBuffer');
         }
-        this.indices_buffer = indicesBuffer;
+        this.buffers = {
+            tex_coord: tex_coord_buf,
+            posicao: posicao_buf,
+            indices: indices_buf,
+        };
         
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.pos_buffer);
+        // aqui, atribuimos os dados àos seus referentes buffers
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.posicao);
         this.gl.bufferData(
             this.gl.ARRAY_BUFFER, 
             new Float32Array(posicao),
             this.gl.STATIC_DRAW
         );
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.coord_buffer);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.tex_coord);
         this.gl.bufferData(
             this.gl.ARRAY_BUFFER, 
-            new Float32Array(this.tex_coords),
+            new Float32Array(tex_coords),
             this.gl.STATIC_DRAW
         );
-
-        this.gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indices_buffer);
+        this.gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.indices);
         this.gl.bufferData(
             gl.ELEMENT_ARRAY_BUFFER, 
             new Uint16Array(indices), 
             gl.STATIC_DRAW
         );
-
-        this.a_tex_coord = gl.getAttribLocation(this.shader, 'a_tex_coord');
-        this.a_posicao = gl.getAttribLocation(this.shader, 'a_pos');
         
+        // aqui, buscamos as variaveis atributos e uniformes do shader 
+
         const u_textura = gl.getUniformLocation(this.shader, 'u_textura');
-        if (u_textura === null) { throw new Error('erro ao achar u_textura'); }
-        this.u_textura = u_textura;
+        if (u_textura === null) { 
+            throw new Error('erro ao achar u_textura'); 
+        }
+        this.uniformes = {
+            textura: u_textura,
+        };
+
+        this.atributos = {
+            posicao: gl.getAttribLocation(this.shader, 'a_pos'),
+            tex_coord: gl.getAttribLocation(this.shader, 'a_tex_coord'),
+        };
 
         const textura = this.gl.createTexture();
         if (textura === null) {
@@ -126,6 +148,7 @@ export default class RenderizadorWebGL implements IRenderizador {
         this.limparTela();
     }
 
+    /** Checa se o navegador suporta WebGL */
     public static checarSuporte(): boolean {
         try {
              const canvas = document.createElement('canvas'); 
@@ -169,17 +192,17 @@ export default class RenderizadorWebGL implements IRenderizador {
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
         
-        this.gl.enableVertexAttribArray(this.a_tex_coord);
-        this.gl.enableVertexAttribArray(this.a_posicao);
+        this.gl.enableVertexAttribArray(this.atributos.tex_coord);
+        this.gl.enableVertexAttribArray(this.atributos.posicao);
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.coord_buffer);
-        this.gl.vertexAttribPointer(this.a_tex_coord, 2, this.gl.FLOAT, false, 0, 0);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.tex_coord);
+        this.gl.vertexAttribPointer(this.atributos.tex_coord, 2, this.gl.FLOAT, false, 0, 0);
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.pos_buffer);
-        this.gl.vertexAttribPointer(this.a_posicao, 3, this.gl.FLOAT, false, 0, 0);        
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.posicao);
+        this.gl.vertexAttribPointer(this.atributos.posicao, 3, this.gl.FLOAT, false, 0, 0);        
 
         this.gl.activeTexture(this.gl.TEXTURE0);
-        this.gl.uniform1i(this.u_textura, 0);
+        this.gl.uniform1i(this.uniformes.textura, 0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.textura);
 
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -187,7 +210,7 @@ export default class RenderizadorWebGL implements IRenderizador {
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
 
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indices_buffer);
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.buffers.indices);
         this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
     }
 
