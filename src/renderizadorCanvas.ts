@@ -32,14 +32,17 @@ export default class RenderizadorCanvas implements IRenderizador {
         this.ctx = ctx;
     }
 
-    mudarCor(r: number, g: number, b: number): void {
+    /** Muda a cor que vai ser usada pelo canvas */
+    private mudarCor(r: number, g: number, b: number): void {
         this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     }
 
-    desenharQuadrado(x: number, y: number, l: number, a: number): void {
+    /** Desenha um retângulo no canvas */
+    private desenharRetangulo(x: number, y: number, l: number, a: number): void {
         this.ctx.fillRect(x, y, l, a);
     }
 
+    /** Preenche a tela de acordo com os dados do buffer da tela */
     desenharTela(tela: number[][]): void {
         this.limparTela();
         
@@ -54,15 +57,12 @@ export default class RenderizadorCanvas implements IRenderizador {
                 }
         
                 const tam = this.PIXEL_TAMANHO;
-                this.desenharQuadrado(x * tam, y * tam, tam, tam);
+                this.desenharRetangulo(x * tam, y * tam, tam, tam);
             }
         }
     }
 
     limparTela(): void {
         this.ctx.clearRect(0, 0, this.LARGURA, this.ALTURA);
-    }
-
-    encerrarFrame(): void {
     }
 }

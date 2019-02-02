@@ -45,7 +45,12 @@ export default class RenderizadorWebGL implements IRenderizador {
         this._gl = gl;
 
         // definição do código fonte do shader
+        
+        // shader de vértice, que irá rodar em todas as vértices
+        // que forem renderizadas
         const verticeFonte = `
+            #version 100
+
             precision mediump float;
             
             attribute vec3 a_pos;
@@ -58,7 +63,10 @@ export default class RenderizadorWebGL implements IRenderizador {
             }
         `;
 
+        // shader de pixel, que irá rodar em todos os pixels que
+        // forem renderizados
         const pixelFonte = `
+            #version 100
             precision mediump float;
 
             uniform sampler2D u_textura;
@@ -82,7 +90,7 @@ export default class RenderizadorWebGL implements IRenderizador {
             0.0, 1.0, // cima esquerda
         ];
 
-        // posição dos vértices
+        // posição dos vértices do retângulo
         const posicao = [
             1.0,  1.0, 0.0,
             1.0, -1.0, 0.0,
@@ -96,7 +104,7 @@ export default class RenderizadorWebGL implements IRenderizador {
             1, 2, 3, // segundo triangulo
         ];
 
-        // criação dos buffers na GPU
+        // aqui, alocamos os buffers na GPU
         const texCoordBuf = this._gl.createBuffer();
         const posBuf = this._gl.createBuffer();
         const indicesBuf = this._gl.createBuffer();
@@ -109,7 +117,7 @@ export default class RenderizadorWebGL implements IRenderizador {
             indices: indicesBuf,
         };
         
-        // aqui, atribuimos os dados àos seus referentes buffers
+        // aqui, atribuimos os dados àos seus referentes buffers da GPU
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffers.posicao);
         this._gl.bufferData(
             this._gl.ARRAY_BUFFER, 
@@ -130,7 +138,6 @@ export default class RenderizadorWebGL implements IRenderizador {
         );
         
         // aqui, buscamos as variaveis atributos e uniformes do shader 
-
         const u_textura = gl.getUniformLocation(this._shader, 'u_textura');
         if (u_textura === null) { 
             throw new Error('erro ao achar u_textura'); 
@@ -138,12 +145,12 @@ export default class RenderizadorWebGL implements IRenderizador {
         this._uniformes = {
             textura: u_textura,
         };
-
         this._atributos = {
             posicao: gl.getAttribLocation(this._shader, 'a_pos'),
             texCoord: gl.getAttribLocation(this._shader, 'a_texCoord'),
         };
 
+        // alocar uma textura na GPU
         const textura = this._gl.createTexture();
         if (textura === null) {
             throw new Error('Erro ao criar textura');
@@ -174,28 +181,34 @@ export default class RenderizadorWebGL implements IRenderizador {
     
     /** Cria e renderiza uma textura baseada no buffer da tela */
     desenharTela(tela: number[][]): void {
+        // seleciona o shader
         this._gl.useProgram(this._shader);
         
+        // seleciona a textura na GPU
         this._gl.bindTexture(this._gl.TEXTURE_2D, this._textura);
         
-        this._gl.pixelStorei(this._gl.UNPACK_ALIGNMENT, 1);
+        // usa o método 'criarTexturaRGBA' para criar uma textura baseada nos dados da tela,
+        // e então passa esses dados para a textura que está alocada na GPU
         this._gl.texImage2D(this._gl.TEXTURE_2D, 0, this._gl.RGBA, this.LARGURA, this.ALTURA, 
             0, this._gl.RGBA, this._gl.UNSIGNED_BYTE, this.criarTexturaRGBA(tela));
 
+        // preenche parametros sobre como a textura será renderizada
         this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MAG_FILTER, this._gl.NEAREST);
         this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MIN_FILTER, this._gl.NEAREST);
         this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_WRAP_S, this._gl.CLAMP_TO_EDGE);
         this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_WRAP_T, this._gl.CLAMP_TO_EDGE);
         
+        // habílita os atributos do shader
         this._gl.enableVertexAttribArray(this._atributos.texCoord);
         this._gl.enableVertexAttribArray(this._atributos.posicao);
 
+        // seleciona e habilita os buffers
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffers.texCoord);
         this._gl.vertexAttribPointer(this._atributos.texCoord, 2, this._gl.FLOAT, false, 0, 0);
-
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffers.posicao);
         this._gl.vertexAttribPointer(this._atributos.posicao, 3, this._gl.FLOAT, false, 0, 0);        
 
+        // coloca a textura na posição 0 da GPU
         this._gl.activeTexture(this._gl.TEXTURE0);
         this._gl.uniform1i(this._uniformes.textura, 0);
         this._gl.bindTexture(this._gl.TEXTURE_2D, this._textura);
@@ -205,6 +218,7 @@ export default class RenderizadorWebGL implements IRenderizador {
         this._gl.enable(this._gl.DEPTH_TEST);
         this._gl.depthFunc(this._gl.LEQUAL);
 
+        // renderiza as vértices
         this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, this._buffers.indices);
         this._gl.drawElements(this._gl.TRIANGLES, 6, this._gl.UNSIGNED_SHORT, 0);
     }
@@ -235,6 +249,10 @@ export default class RenderizadorWebGL implements IRenderizador {
     }
 
     /** Compila o programa que irá rodar na placa de video para renderizar na tela
+     * @param verticeFonte O código fonte do shader de vértice, que é o programa que 
+     * irá rodar em todas as vértices que forem renderizados
+     * @param pixelFonte O código fonte do shader de pixel, que irá rodar em todos os 
+     * pixels que forem renderizados
      * @returns O programa compilado
      */
     private compilarShader(verticeFonte: string, pixelFonte: string): WebGLProgram {
