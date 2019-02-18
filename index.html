@@ -11,6 +11,8 @@
             body {
                 background: rgb(57, 50, 71);
                 color: white;
+                text-align: center;
+                margin: 0;
             }
 
             input#rom-arquivo {
@@ -26,7 +28,8 @@
             }
 
             div#instrucoes {
-                color: rgb(57, 50, 71);
+                /* color: rgb(57, 50, 71); */
+                color: white;
                 border-radius: 8px;
                 max-width: 240px;
                 width: 100%;
@@ -34,16 +37,13 @@
                 text-align: left;
                 font-size: 17px;
                 position: relative;
-                bottom: 30px;
+                bottom: 20px;
+                left: 10px;
             }
 
             div#emulador-container {
                 text-align: center;
-                border: 1px solid white;
-                border-radius: 8px;
-                background-color: white;
                 padding: 5px;
-                width: 770px;
                 height: 256px;
                 margin: 0;
             }
@@ -67,6 +67,24 @@
                 -khtml-user-select: none;
                 -webkit-user-select: none;
                 -o-user-select: none;
+            }
+
+            #teclado-virtual {
+                display:inline-block;
+                text-align: center;
+                display: inline-grid;
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+                grid-gap: 3px;
+                justify-items: center;
+                align-self: center;
+                width: 180px;
+            }
+
+            #teclado-wrapper {
+                text-align: center;
+                width: xpx;
+                margin: 0 auto;
             }
 
             .botao, .teclado-btn {
@@ -117,6 +135,7 @@
                 }
 
                 #teclado-virtual {
+                    width: 220px;
                     text-align: center;
                 }
 
@@ -153,28 +172,29 @@
             <button class="botao" id="chip-8-step" disabled>Step</button>
         </div>
         <br/>
-        <div id="teclado-virtual">
-            <button class="teclado-btn">1</button>
-            <button class="teclado-btn">2</button>
-            <button class="teclado-btn">3</button>
-            <button class="teclado-btn">C</button>
-            <br/>
-            <button class="teclado-btn">4</button>
-            <button class="teclado-btn">5</button>
-            <button class="teclado-btn">6</button>
-            <button class="teclado-btn">D</button>
-            <br/>
-            <button class="teclado-btn">7</button>
-            <button class="teclado-btn">8</button>
-            <button class="teclado-btn">9</button>
-            <button class="teclado-btn">E</button>
-            <br/>
-            <button class="teclado-btn">A</button>
-            <button class="teclado-btn">0</button>
-            <button class="teclado-btn">B</button>
-            <button class="teclado-btn">F</button>
+
+        <div id="teclado-wrapper">
+            <div id="teclado-virtual">
+                <button class="teclado-btn">1</button>
+                <button class="teclado-btn">2</button>
+                <button class="teclado-btn">3</button>
+                <button class="teclado-btn">C</button>
+                <button class="teclado-btn">4</button>
+                <button class="teclado-btn">5</button>
+                <button class="teclado-btn">6</button>
+                <button class="teclado-btn">D</button>
+                <button class="teclado-btn">7</button>
+                <button class="teclado-btn">8</button>
+                <button class="teclado-btn">9</button>
+                <button class="teclado-btn">E</button>
+                <button class="teclado-btn">A</button>
+                <button class="teclado-btn">0</button>
+                <button class="teclado-btn">B</button>
+                <button class="teclado-btn">F</button>
+            </div>
         </div>
         <br/>
+        
         <label class="nao-selecionar">Escolha uma rom: </label>
         <select id="rom-select" class="nao-selecionar">
             <option value="BLINKY">BLINKY</option>
