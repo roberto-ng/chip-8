@@ -1,6 +1,13 @@
+image: node:6.0
 pages:
-  stage: deploy
+  cache:
+    paths:
+    - node_modules/
   script:
+  - npm install -g typescript
+  - npm install
+  - npm run build
+  - rm -rf node_modules
   - mkdir .public
   - cp -r * .public
   - mv .public public
@@ -9,3 +16,9 @@ pages:
     - public
   only:
   - master
+before_script:
+- npm install -g typescript
+- npm install
+build:
+  script:
+  - npm run build
