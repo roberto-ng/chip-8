@@ -18,8 +18,8 @@ jobs:
           rm -rf node_modules
           mkdir .public
           cp -r * .public
+          mkdir -p public
           mv .public public
-          mkdir public
       -
         name: Deploy to GitHub Pages
         if: success()
