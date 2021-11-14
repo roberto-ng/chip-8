@@ -16,15 +16,15 @@ jobs:
           npm install 
           npm run build
           rm -rf node_modules
-          mkdir -p .public
-          cp -r * .public
-          mv .public ../public
+          #mkdir -p .public
+          #cp -r * .public
+          #mv .public ../public
       -
         name: Deploy to GitHub Pages
         if: success()
         uses: crazy-max/ghaction-github-pages@v2
         with:
           target_branch: gh-pages
-          build_dir: public
+          build_dir: /
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
