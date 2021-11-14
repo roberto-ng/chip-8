@@ -17,7 +17,9 @@ jobs:
           npm run build
           rm -rf node_modules
           mkdir -p public
-          cp -r * public
+          cp -r roms public
+          cp -r dist public
+          cp index.html public
           #mv .public ../public
       -
         name: Deploy to GitHub Pages
