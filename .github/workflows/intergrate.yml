@@ -16,8 +16,8 @@ jobs:
           npm install 
           npm run build
           rm -rf node_modules
+          mkdir -p .public
           cp -r * .public
-          mkdir -p public
           mv .public public
       -
         name: Deploy to GitHub Pages
