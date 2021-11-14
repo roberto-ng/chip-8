@@ -129,7 +129,7 @@ export default class UI {
                 throw new Error('Erro ao buscar contexto do canvas');
             }
 
-            this._renderizador = new RenderizadorWebGL(ctx);
+            this._renderizador = new RenderizadorWebGL(ctx as any);
             this._chip8 = new Chip8(this._renderizador);
         } else {
             console.log('usando canvas2d');
