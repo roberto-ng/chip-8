@@ -1,0 +1,31 @@
+name: website
+
+on: push
+
+jobs:
+  publish:
+    runs-on: node:6.0
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Gen page
+        run: |
+          npm install -g typescript
+          npm install 
+          npm run build
+          rm -rf node_modules
+          mkdir .public
+          cp -r * .public
+          mv .public public
+          mkdir public
+      -
+        name: Deploy to GitHub Pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: gh-pages
+          build_dir: public
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
